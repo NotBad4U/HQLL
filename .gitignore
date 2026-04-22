@@ -1,0 +1,8 @@
+.claude
+*.pdf
+*.log
+.DS_Store
+*.aux
+*.toc
+*.out
+*.bbl       
