@@ -1,6 +1,8 @@
 #import "@preview/ctheorems:1.1.3": *
 
 #let colors = (
+  emerald: rgb("#00A99D"), 
+  royalblue: cmyk(100%, 50%, 0%, 0%),
   yellow: rgb(99%, 78%, 7%),
   gray: rgb(31%, 31%, 33%),
   bulletgray: rgb(60%, 60%, 61%),
@@ -35,6 +37,7 @@
 #let lemma = thm-base("Lemma")
 #let observation = thm-base("Observation")
 #let corollary = thm-base("Corollary")
+#let example = thm-base("Example")
 
 #let prf-base = thmproof.with(
   "proof",
@@ -98,7 +101,7 @@
       set text(11pt, font: fonts.sans, weight: "bold")
       let art-no-page-no = if hide-lipics [#current-page]
         else if article-no != none [#article-no:#current-page]
-        else [#text(red)[XX]:#current-page]
+        else [#current-page]
       if calc.even(current-page) {
         place(bottom + left, dx: -16mm, art-no-page-no)
         place(bottom + left, title-running)
@@ -127,15 +130,15 @@
         //   event-location,
         // ),
         // LICENSE INFO
-        grid(
-          columns: 2,
-          align: bottom,
-          column-gutter: 5pt,
-          link("https://creativecommons.org/licenses/by/4.0/", image("assets/cc-by.svg", height: .5cm)),
-          [
-            © #if anonymous { text(red)[Anonymous author(s)] } else { copyright }\;\
-            licensed under Creative Commons License CC-BY 4.0],
-        )
+        // grid(
+        //   columns: 2,
+        //   align: bottom,
+        //   column-gutter: 5pt,
+        //   link("https://creativecommons.org/licenses/by/4.0/", image("assets/cc-by.svg", height: .5cm)),
+        //   [
+        //     © #if anonymous { text(red)[Anonymous author(s)] } else { copyright }\;\
+        //     licensed under Creative Commons License CC-BY 4.0],
+        // )
         // EVENT INFO 2
         let last-page = counter(page).final().first()
         if event-long-title != none [#event-long-title. \ ]
@@ -144,20 +147,20 @@
         ]
         if article-no != none [Article No. #article-no\; pp. #article-no:1--#article-no:#last-page]
         // PUBLISHER INFO
-        grid(
-          columns: 2,
-          align: bottom,
-          column-gutter: 5pt,
-          image("assets/lipics-logo-bw.svg", height: 2em),
-          [
-            #link("https://www.dagstuhl.de/lipics/")[
-              Leibniz International Proceedings in Informatics
-            ] \
-            #link("https://www.dagstuhl.de")[
-              Schloss Dagstuhl -- Leibniz-Zentrum für Informatik, Dagstuhl Publishing, Germany
-            ]
-          ],
-        )
+        // grid(
+        //   columns: 2,
+        //   align: bottom,
+        //   column-gutter: 5pt,
+        //   image("assets/lipics-logo-bw.svg", height: 2em),
+        //   [
+        //     #link("https://www.dagstuhl.de/lipics/")[
+        //       Leibniz International Proceedings in Informatics
+        //     ] \
+        //     #link("https://www.dagstuhl.de")[
+        //       Schloss Dagstuhl -- Leibniz-Zentrum für Informatik, Dagstuhl Publishing, Germany
+        //     ]
+        //   ],
+        // )
       }
       // for odd pages (except the first):
       // display a yellow box on the right of the footer
@@ -168,7 +171,7 @@
           inset: 2mm,
           width: 4cm,
           height: 7mm,
-          fill: colors.yellow,
+          fill: colors.emerald,
           text(tracking: 1.5pt, spacing: 1pt, colors.gray, font: fonts.sans, footer-box-text),
         ))))
       }
@@ -314,7 +317,7 @@
   set heading(numbering: "1.1")
   show heading.where(level: 1): it => {
     let nb-block = if it.numbering == none { none } else {
-      block(fill: colors.yellow, outset: (top: 0.7mm, bottom: -0.7mm),
+      block(fill: colors.emerald, outset: (top: 0.7mm, bottom: -0.7mm),
         height: 5mm, width: 5.9mm,
         align(center, text(font: fonts.sans, size: 12pt,
           numbering(it.numbering, ..counter(heading).at(it.location()))
@@ -404,7 +407,7 @@
     set align(left)
     set text(size: .92em)
     align(horizon, {})
-    box(fill: color.yellow, inset: 1.4mm)
+    box(fill: colors.emerald, inset: 1.4mm)
     let n = numbering(it.numbering, ..counter(figure.where(kind: it.kind)).get())
     h(3mm)
     text(font: fonts.sans, weight: "bold")[#it.supplement #n]
