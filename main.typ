@@ -88,15 +88,16 @@ $
 $
 
 #example("Probability measures on quasi-Borel spaces")[
-Take the two-element discrete space $2 = {0, 1}$ as a quasi-Borel space
-$(2, M_2)$, where $M_2$ is the set of measurable maps $RR -> 2$.These are exactly the characteristic functions $chi_B$ of Borel sets $B subset.eq RR$.
+  Take the two-element discrete space $2 = {0, 1}$ as a quasi-Borel space
+  $(2, M_2)$, where $M_2$ is the set of measurable maps $RR -> 2$ and $Sigma_2 = {emptyset,{0},{1},{0,1}}$.
+  These are exactly the characteristic functions $chi_B$ (i.e. indicator functions $bb(1)_B$) of Borel sets $B subset.eq RR$.
 
-Two random variables in $M_2$:
+  Two random variables in $M_2$:
 
-$ alpha = chi_([0, 1)), quad alpha(r) = cases(1 "if" 0 <= r < 1, 0 "otherwise"), $
-$ beta  = chi_(QQ),      quad beta(r)  = cases(1 "if" r in QQ, 0 "otherwise"). $
+  $ alpha = chi_([0, 1)), quad alpha(r) = cases(1 "if" 0 <= r < 1, 0 "otherwise"), $
+  $ beta = chi_(QQ), quad beta(r) = cases(1 "if" r in QQ, 0 "otherwise"). $
 
-Equip $RR$ with $mu = cal(N)(0,1)$. The push-forwards are Bernoulli measures: $ alpha_* mu = "Bern"(Phi(1) - Phi(0)), quad beta_* mu = "Bern"(0) = delta_0, $ since $QQ$ has Lebesgue (hence Gaussian) measure zero.
+  Equip $RR$ with $mu = cal(N)(0,1)$. The push-forwards are Bernoulli measures: $ alpha_* mu = "Bern"(Phi(1) - Phi(0)), quad beta_* mu = "Bern"(0) = delta_0, $ since $QQ$ has Lebesgue (hence Gaussian) measure zero.
 ]
 
 Unlike *Meas*, the category *QBS* is cartesian closed @qbs. Given the quasi-Borel spaces $(X, M_X)$ and $(Y, M_Y)$, the exponential $Y^X$ has as
@@ -123,44 +124,73 @@ Consider now the sets $L(X, M_X)$ of QBS morphisms $(X, M_X) -> [0, infinity]$, 
 // $
 //   phi scripts(tack.r.short)^mu_p psi := and.big_(alpha in M_X) integral_(x in RR)^(-p) psi(x) multimap psi(x) dot mu(x)
 // $
-// 
+//
 
 #v(3em)  // space for the top annotations
 $
   phi scripts(tack.r.short)^mu_p psi :=
-  markul(and.big_(alpha in M_X), tag: #<meet>, color: #olive )
-  markul(integral_(r in RR)^(-p), tag: #<pmean>, color: #blue )
+  markul(and.big_(alpha in M_X), tag: #<meet>, color: #olive)
+  markul(integral_(r in RR)^(-p), tag: #<pmean>, color: #blue)
   markul((phi multimap psi), tag: #<impl>, color: #purple)
   (markul(alpha(r), tag: #<probe>, color: #red))
   dif markul(mu(r), tag: #<base>, color: #teal)
-
-  #annot(<meet>,  pos: top + left,  dy: -1.6em, leader-connect: "elbow")[Meet over QBS probes]
-  #annot(<pmean>, pos: top,          dy: -1.6em, leader-connect: "elbow")[Harmonic $p$-mean ]
-  #annot(<impl>,  pos: bottom,       dy: 1.2em, leader-connect: "elbow")[$psi / phi$]
-  #annot(<probe>, pos: bottom,       dy: 2.4em, leader-connect: "elbow")[Sample $X$ through a RV]
-  #annot(<base>,  pos: bottom + right, dy: 1.2em, leader-connect: "elbow" )[Base probability on $RR$]
+  #annot(<meet>, pos: top + left, dy: -1.6em, leader-connect: "elbow")[Meet over QBS probes]
+  #annot(<pmean>, pos: top, dy: -1.6em, leader-connect: "elbow")[Harmonic $p$-mean ]
+  #annot(<impl>, pos: bottom, dy: 1.2em, leader-connect: "elbow")[$psi / phi$]
+  #annot(<probe>, pos: bottom, dy: 2.4em, leader-connect: "elbow")[Sample $X$ through a RV]
+  #annot(<base>, pos: bottom + right, dy: 1.2em, leader-connect: "elbow")[Base probability on $RR$]
 $
 #v(3em)  // space for the bottom annotations
 
-
-
-
 This definition satisfies the following properties:
 
-#lemma("Reflexivity")[
-  For every $phi in L(X, M_X)$,
-  $ phi tack.r.short^mu_p phi. $
+#lemma("Graded reflexivity")[
+  For every $phi in L(X, M_X)$ and every $p in (0, infinity)$,
+  $ phi attach(tack.r.short, tr: mu, br: p) phi. $
+  in other words,
+  $
+    1 = and.big_(alpha in M_X) integral_(r in RR)^(-infinity)1 dif mu(x) <= and.big_(alpha in M_X) integral_(r in RR)^(-infinity) phi/phi dif mu(x).
+  $
+  Proof.
+
+  #text(fill: colors.emerald, "TODO")
 ]
 
-#lemma("Transitivity")[
-  For every $phi, psi, chi in L(X, M_X)$,
-  $ phi tack.r.short^mu_p psi quad "and" quad psi tack.r.short^mu_p chi
-    quad ==> quad phi tack.r.short^mu_p chi. $
+#lemma("Graded transitivity")[
+  For every $phi, psi, chi in L(X, M_X)$ and every $p, q in (0, infinity)$,
+  $
+    phi attach(tack.r.short, tr: mu, br: p) psi quad "and" quad psi attach(tack.r.short, tr: mu, br: q) chi
+    quad ==> quad phi attach(tack.r.short, tr: mu, br: p plus.o^* q) chi.
+  $
+  which amounts to dual generalized Hölder inequality:
+  $
+    and.big_(alpha in M_X) integral_(r in RR)^(-p) psi/phi dif mu(x)
+    times.o integral_(r in RR)^(-q) chi/psi dif mu(x)
+    <= and.big_(alpha in M_X) integral_(r in RR)^(-p plus.o^* q) chi/phi dif mu(x).
+  $
+  Proof.
+
+  #text(fill: colors.emerald, "TODO")
+]
+
+#lemma("Relaxation")[
+  For every $phi, psi in L(X, M_X)$ and every $p, q in (0, infinity)$ with $p <= q$,
+  $
+    phi attach(tack.r.short, tr: mu, br: p) psi <= phi attach(tack.r.short, tr: mu, br: q) psi.
+  $
+  by general properties of $L^p$ norms over probability spaces.
+  \
+  Proof.
+
+  #text(fill: colors.emerald, "TODO")
 ]
 
 #corollary("The higher-order hyperdoctrine of Quasi-Borel Spaces")[
   The higher-order hyperdoctrine of Quasi-Borel Spaces is the functor $L : bold("QBS")^op -> (plus.o^*, times.o) bold("-Prd")$
 ]
+
+= Sequent calculus
+
 
 
 #bibliography("bibliography.bib")
