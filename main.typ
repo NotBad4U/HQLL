@@ -8,7 +8,7 @@
 #let abstract = ""
 
 #show: para-lipics.with(
-  title: [∞-Dyck paths and Interval temporal logics],
+  title: [Higher order QLL with QBS],
   title-running: [],
   authors: (
     (
@@ -110,6 +110,42 @@ so that a random element of $Y^X$ is exactly a random function $RR times X -> Y$
 The evaluation map $Y^X times X -> Y$ is then a morphism with the expected universal property.
 Cartesian closure is what recovers function spaces such as $RR^RR$, which have no counterpart in *Meas*, and is the structural feature that lets $bold("QBS")$ serve as a semantic domain for higher-order probabilistic programs.
 
+
+= A Locally graded enriched preorders
+
+The following is an enriched version of the notion of locally $cal(M)$-graded category.
+We first give a direct (and slightly more general) definition of the concept. Let $(cal(M), ⪯, i , dot.o)$
+be an ordered monoid and $(cal(V), <=, I, times.o)$ be a symmetric monoidal preorder.
+
+#definition()[
+  A locally $cal(M)$-graded, $cal(V)$-enriched preorder $((cal(M), cal(V))-bold("Pre")$ for short) $P$  is comprised of the following data
+  - a set of elements $P$
+  - for each $a, b ∈ P$ , and grade $m ∈ cal(M)$, an m-witness of inequality
+    $
+      (a ⊑#sub[m] b) ∈ V ,
+    $
+  - *Graded reflexvity*: $forall a in P, <= a ⊑#sub[i] a$
+  - *Graded transitivity*: $∀a, b, c ∈ P , m, n ∈ cal(M), (a ⊑#sub[m] b) ⊗ (b ⊑#sub[n] c) ≤ (a ⊑_(m dot.o n) c).$
+  - *Relaxation:* $∀a, b ∈ P , m, n ∈ cal(M), m ⪯ n arrow.r (a ⊑#sub[n] b) ≤ (a ⊑#sub[m] b)$.
+]
+
+#definition("Opposite graded order")[
+  The opposite of an $((cal(M), cal(V))$-preorder $(P , ⊑(−))$ is the $((cal(M), cal(V))$-preorder  $P^op$ := (P , ⊒(−)) where
+  $
+    ∀m ∈ cal(M), a, b ∈ P , (a ⊒#sub[m] b) equiv (b ⊑#sub[m] a)
+  $
+]
+
+#definition()[
+  The 2-category $(cal(M), cal(V))-bold("Pre")$ has:
+  - _objects_: $(cal(M), cal(V))-bold("Pre")$,
+  - _morphisms_:  their maps,
+  - _2-cells_: i-witnessed transformations.
+
+  It is monoidal once equipped  with the tensor product of $(cal(M), cal(V))$-preorders.
+]
+
+We can now define the preorder: $(cal(M), cal(V))-bold("Pre")$ for $cal(M) = [0, ∞]_(⊕^*)$ and $cal(V) = [0, ∞]_⊗$
 
 = A doctrine of Quasi-Borel Spaces
 
