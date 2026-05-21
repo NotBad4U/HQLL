@@ -3,7 +3,7 @@
 #import "@preview/cetz:0.4.2"
 #import "@preview/showybox:2.0.4": showybox
 #import "@preview/mannot:0.3.1": *
-
+#import "@preview/curryst:0.6.0": prooftree, rule, rule-set
 
 #let abstract = ""
 
@@ -11,20 +11,18 @@
   title: [Higher order QLL with QBS],
   title-running: [],
   authors: (
-    (
-      name: [Alessio Coltellacci],
-      email: "alecol@itu.dk",
-      website: "http://www.myhomepage.edu",
-      orcid: "0009-0005-3580-2075",
-      affiliations: [
-
-      ],
-    ),
+    // (
+    //   name: [Alessio Coltellacci],
+    //   email: "alecol@itu.dk",
+    //   website: "http://www.myhomepage.edu",
+    //   orcid: "0009-0005-3580-2075",
+    //   affiliations: [
+    //   ],
+    // ),
   ),
   abstract: abstract,
-  keywords: [Dyck paths, Temporal logics, Interval temporal logics, Model checking],
+  keywords: [],
 )
-
 
 // = Preliminaries: Quasi-Borel Spaces
 
@@ -111,6 +109,10 @@
 // Cartesian closure is what recovers function spaces such as $RR^RR$, which have no counterpart in *Meas*, and is the structural feature that lets $bold("QBS")$ serve as a semantic domain for higher-order probabilistic programs.
 
 
+#let tacklnot = scale(x: -100%)[#sym.tack.r.not]
+
+
+
 = A Locally graded enriched preorders
 
 The following is an enriched version of the notion of locally $cal(M)$-graded category.
@@ -149,36 +151,30 @@ We can now define the preorder: $(cal(M), cal(V))-bold("Pre")$ for $cal(M) = [0,
 
 = The QProb category
 
-Objects of $bold("QBS")$ ignore measures: a QBS-morphism is just a function that pulls
-random elements back to random elements. To get a doctrine that tracks how measures
-transport, we assemble QBS-spaces equipped with a probability measure into a category
-whose morphisms are _measure-non-increasing_, mirroring Capucci's $bold("Prob")$ but built
-on $bold("QBS")$ rather than $bold("Meas")$.
+// Objects of $bold("QBS")$ ignore measures: a QBS-morphism is just a function that pulls
+// random elements back to random elements.
+To get a doctrine that tracks how measures transport, we consider QBS equipped with a probability measure into a category whose morphisms are _measure-non-increasing_, mirroring built on $bold("QBS")$ (i.e. $bold("Meas")$) rather than $bold("Prob")$.
 
-#definition("Objects of QProb")[
-  An object of $bold("QProb")$ is a pair $((X, M_X), p_X)$ where $(X, M_X)$ is a quasi-Borel
+#definition("The category QProb")[
+  - An object of $bold("QProb")$ is a pair $((X, M_X), p_X)$ where $(X, M_X)$ is a quasi-Borel
   space and $p_X in P(X)$ is a probability measure on it. Concretely, $p_X$ is represented
-  by a pair $(alpha, mu)$ with $alpha in M_X$ and $mu in G(RR)$, taken modulo the
-  equivalence
-  $
-    (alpha, mu) tilde (alpha', mu') quad "iff" quad alpha_* mu = alpha'_* mu'
-    quad "on" (X, Sigma_(M_X)).
-  $
-]
+  by a pair $(alpha, mu)$ with $alpha in M_X$ and $mu in G(RR)$.
 
-#definition("Morphisms of QProb")[
-  A morphism $f colon ((X, M_X), p_X) -> ((Y, M_Y), p_Y)$ is a QBS-morphism $f colon X -> Y$
+  - A morphism $f colon ((X, M_X), p_X) -> ((Y, M_Y), p_Y)$ is a QBS-morphism $f colon X -> Y$
   that is _measure-non-increasing_: for every QBS-morphism $phi colon Y -> [0, infinity]$,
   $
     integral_X (phi compose f) dif p_X
     quad <= quad
-    integral_Y phi dif p_Y. quad (*)
+    integral_Y phi dif p_Y. quad
   $
   Equivalently, $P(f)(p_X) <= p_Y$ as measures on $(Y, Sigma_(M_Y))$.
 ]
 
+I will omit to write $M_Y$ and $M_X$ when they are clear from context, and write $(X, p_X)$ for brevity.
+
 #lemma("QProb is a category")[
-  Identities are measure-preserving. For composability, given
+  - Identities are measure-preserving;
+  - For composability, given
   $f colon (X, p_X) -> (Y, p_Y)$ and $g colon (Y, p_Y) -> (Z, p_Z)$ and a test QBS-morphism
   $phi colon Z -> [0, infinity]$, the function $phi compose g$ is itself a QBS-morphism into
   $[0, infinity]$ and so qualifies as a test for $f$; chaining $(*)$ twice gives
@@ -188,30 +184,57 @@ on $bold("QBS")$ rather than $bold("Meas")$.
     <= integral_Z phi dif p_Z.
   $
   Associativity and identity laws are inherited from $bold("QBS")$.
-  \
-  Proof.
 
-  #text(fill: colors.emerald, "TODO")
 ]
 
-#observation("Structure of QProb")[
-  $bold("QProb")$ has:
-  - a _terminal object_ $(*, delta_*)$: the singleton QBS with its unique probability measure;
-  - _binary products_ $((X times Y, M_(X times Y)), p_X times.o p_Y)$, where $times.o$
-    is the product measure given by the strength of the probability monad $P$ on $bold("QBS")$;
-    the projections $pi_X, pi_Y$ are measure-preserving, since the marginals of
-    $p_X times.o p_Y$ are exactly $p_X$ and $p_Y$;
-  - an _embedding of_ $bold("Prob")$: the right adjoint $R colon bold("Meas") -> bold("QBS")$
-    restricts to a fully faithful embedding of standard Borel probability spaces into
-    $bold("QProb")$.
+#lemma("QProb has terminal object")[
+  $bold("QProb")$ has a _terminal object_ $(*, delta_*)$ i.e. the singleton QBS with its
+  dirac measure at $*$.
+]
+
+#lemma("QProb has binary products")[
+  $bold("QProb")$ has _binary products_ $((X times Y, M_(X times Y)), p_X times.o p_Y)$,
+  where $times.o$ is the product measure (joint distribution); the projections $pi_X, pi_Y$ are the marginalization maps and measure-preserving, since the marginals of $p_X times.o p_Y$ are exactly $p_X$ and $p_Y$.
+]
+
+#lemma($"QProb" tacklnot tack.r.not "QBS"$)[
+  There is a forgetful functor $U: bold("QProb") -> bold("QBS")$ such that $U(((X, M_X), p_X)) = (X, M_X)$,
+  but it does not generally have a left or a right ajoint.
+
+  - If $F: bold("QBS") -> bold("QProb")$, so
+  $
+    bold("QProb")(F X, ((Y, M_Y), p_Y)) ≌ bold("QBS")(X, U(Y)),
+  $
+  Let $X$ be the terminal object of QBS i.e. 1 and $Y = {0, 1} = 2$. In QBS we have two maps from $1 -> Y$,
+  one selecting 1 and one selecting 0.
+  In QProb, however, there is only one morphism from $F 1$ to $((Y, M_Y), delta)$, since any such morphism must be measure-preserving and the only probability measure on $1$ is the dirac at its unique point.
+
+
+  Because for having a morphism from $F 1 -> (Y, delta_0)$ we would need $delta_1 <= delta_0$ which is false because $delta_1({1}) = 1 > 0 = delta_0({1})$.
+
+  Hence, no such generic $F$ can exist.
+
+  - If $R: bold("QBS") -> bold("QProb")$,
+  $
+    bold("QProb")((X, p_X), R Y) ≌ bold("QBS")(U(X), Y)
+  $
+  a contradiction by a similar argument can be found by taking $X = 2$ and $Y = 1$.
+]
+
+#observation("Embedding of Prob into QProb")[
+  ???
+]
+
+#definition($"QProb "[0, infinity]$)[
+  We can equip $[0, infinity]$ with the quasi-Borel structure $M_([0, infinity])$ of measurable functions $RR -> [0, infinity]$ and the probability measure ???.
 ]
 
 
 = A doctrine of Quasi-Borel Spaces
 
-We can now assemble the doctrine
+We can now define the doctrine functor:
 $
-  L colon bold("QProb")^op -> ([0, infinity]_(plus.o^*), [0, infinity]_(times.o))-bold("Pre")
+  L colon bold("QProb")^op -> ([0, infinity])_(times.o,plus.o^*)-bold("Pre")
 $
 whose grading monoid is $[0, infinity]_(plus.o^*)$ and whose enrichment is
 $[0, infinity]_(times.o)$. The fibre over a QProb object $(X, p_X)$ is the set of
@@ -219,7 +242,7 @@ $[0, infinity]$-valued predicates on $X$:
 
 $
   L(X, p_X) #h(0.3em) := #h(0.3em)
-    bold("QBS")((X, M_X), ([0, infinity], M_([0, infinity]))),
+  bold("QBS")((X, M_X), ([0, infinity], M_([0, infinity]))),
 $
 
 i.e. the set of QBS-morphisms $X -> [0, infinity]$. By Proposition 15(1) of @qbs this
@@ -241,6 +264,14 @@ Borel spaces we recover Capucci's fibres verbatim.
 ]
 
 == Graded entailment
+
+#remark("The generalized means")[
+  If $p$ is a non-zero real number, and ${ x_1, dots, x_n } subset RR_(times.o)$ then the generalized mean or power mean with exponent $p$
+  of these positive real numbers is
+  $
+    M_p (x_1, dots, x_n) := (1/n sum_(i=1)^n x_i^p)^(1/p).
+  $
+]
 
 #definition("Graded entailment")[
   For $(X, p_X) in bold("QProb")$, $phi, psi in L(X, p_X)$, and softness $p in [0, infinity]$,
@@ -471,7 +502,111 @@ composition in $bold("QBS")$.
 = Sequent calculus
 
 
+== Universal
+
+#v(0.5em)
+
+#prooftree(rule(
+  name: $forall^q "R"$,
+  $x :^P X, y :^q Y | Gamma tack.r theta, Delta$,
+  $x :^P X | Gamma tack.r forall^q y : Y . theta, Delta$,
+))
+
+#v(0.8em)
+
+#prooftree(rule(
+  name: $forall^q "L"$,
+  $x :^P X, y :^q Y | Gamma, theta tack.r Delta$,
+  $x :^P X | Gamma, forall^q y : Y . theta tack.r Delta$,
+))
+
+#v(0.5em)
+
+Side condition: $y$ does not appear free in $Gamma, Delta$.
+
+Soundness: $forall^q_(pi_X)$ is the $q$-graded right adjoint to $pi_X^*$.
+
+= Equality rules
+
+Equality is interpreted as the quantale metric:
+$ [|t =_A u|] = d_A([|t|], [|u|]) $
+where $d_A$ is the distance on $A$ induced by the quantale $multimap$.
+
+For higher-order Leibniz formulation in QBSProb (requires cartesian closure):
+$ x =_X y := forall^oo phi : "Pred"(X) . phi(x) multimap phi(y) $
+
+== Introduction (reflexivity)
+
+#v(0.5em)
+
+#prooftree(rule(
+  name: $"eq-i"$,
+  $x :^P X | Gamma tack.r Delta$,
+  $x :^P X | Gamma tack.r r(x = x), Delta$,
+))
+
+#v(0.5em)
+
+Soundness: $[|t =_A t|] = d_A([|t|], [|t|]) = 0 <= [|Psi|]$ — the metric vanishes on the diagonal, giving the strongest possible truth value.
+
+== Elimination (substitution)
+
+#v(0.5em)
+
+#prooftree(rule(
+  name: $"eq-e"$,
+  $Gamma, x :^r A | Psi tack.r phi$,
+  $Delta tack.r u : A$,
+  $Delta tack.r v : A$,
+  $Gamma, r Delta | Psi[u\/x], r(u = v) tack.r phi[v\/x]$,
+))
+
+#v(0.5em)
+
+Soundness: The sensitivity $r$ of $phi$ in $x$ means $phi$ is $r$-Lipschitz in that variable, so
+$ |phi[u\/x] - phi[v\/x]| <= r dot d_A(u, v) = r(u = v). $
+Combined with $Psi tack.r phi[u\/x]$ this yields $Psi, r(u = v) tack.r phi[v\/x]$.
+
+= Derived consequences
+
+From (eq-i) and (eq-e) we derive standard equality properties:
+
+== Symmetry
+
+#prooftree(rule(
+  name: $"sym"$,
+  $x : A, y : A | r(x = y) tack.r r(y = x)$,
+))
+
+== Transitivity (= triangle inequality at $r = 1$)
+
+#prooftree(rule(
+  name: $"trans"$,
+  $x : A, y : A, z : A | r(x = y), r(y = z) tack.r r(x = z)$,
+))
+
+== Congruence
+
+If $Gamma, x :^r A tack.r t : B$, $Delta tack.r u : A$, $Delta tack.r v : A$, then:
+
+#prooftree(rule(
+  name: $"cong"$,
+  $Gamma, x :^r A tack.r t : B$,
+  $Delta tack.r u : A$,
+  $Delta tack.r v : A$,
+  $r(u = v) tack.r t[u\/x] =_B t[v\/x]$,
+))
+
+== Leibniz equivalence
+
+The predicates $forall phi : "Pred"^r(A) . phi(x) multimap phi(y)$ and $r(x =_A y)$ are equivalent
+(Proposition 7.3 of Bacci–Møgelberg). This is what makes the higher-order definition coincide with the metric interpretation.
+
+
+
 
 #bibliography("bibliography.bib")
+
+
 
 
