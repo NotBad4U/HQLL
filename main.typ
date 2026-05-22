@@ -14,7 +14,7 @@
     // (
     //   name: [Alessio Coltellacci],
     //   email: "alecol@itu.dk",
-    //   website: "http://www.myhomepage.edu",
+    //   website: "httr://www.myhomepage.edu",
     //   orcid: "0009-0005-3580-2075",
     //   affiliations: [
     //   ],
@@ -156,30 +156,30 @@ We can now define the preorder: $(cal(M), cal(V))-bold("Pre")$ for $cal(M) = [0,
 To get a doctrine that tracks how measures transport, we consider QBS equipped with a probability measure into a category whose morphisms are _measure-non-increasing_, mirroring built on $bold("QBS")$ (i.e. $bold("Meas")$) rather than $bold("Prob")$.
 
 #definition("The category QProb")[
-  - An object of $bold("QProb")$ is a pair $((X, M_X), p_X)$ where $(X, M_X)$ is a quasi-Borel
-  space and $p_X in P(X)$ is a probability measure on it. Concretely, $p_X$ is represented
+  - An object of $bold("QProb")$ is a pair $((X, M_X), rho_X)$ where $(X, M_X)$ is a quasi-Borel
+  space and $rho_X in P(X)$ is a probability measure on it. Concretely, $rho_X$ is represented
   by a pair $(alpha, mu)$ with $alpha in M_X$ and $mu in G(RR)$.
 
-  - A morphism $f colon ((X, M_X), p_X) -> ((Y, M_Y), p_Y)$ is a QBS-morphism $f colon X -> Y$
+  - A morphism $f colon ((X, M_X), rho_X) -> ((Y, M_Y), p_Y)$ is a QBS-morphism $f colon X -> Y$
   that is _measure-non-increasing_: for every QBS-morphism $phi colon Y -> [0, infinity]$,
   $
-    integral_X (phi compose f) dif p_X
+    integral_X (phi compose f) dif rho_X
     quad <= quad
     integral_Y phi dif p_Y. quad
   $
-  Equivalently, $P(f)(p_X) <= p_Y$ as measures on $(Y, Sigma_(M_Y))$.
+  Equivalently, $P(f)(rho_X) <= p_Y$ as measures on $(Y, Sigma_(M_Y))$.
 ]
 
-I will omit to write $M_Y$ and $M_X$ when they are clear from context, and write $(X, p_X)$ for brevity.
+I will omit to write $M_Y$ and $M_X$ when they are clear from context, and write $(X, rho_X)$ for brevity.
 
 #lemma("QProb is a category")[
   - Identities are measure-preserving;
   - For composability, given
-  $f colon (X, p_X) -> (Y, p_Y)$ and $g colon (Y, p_Y) -> (Z, p_Z)$ and a test QBS-morphism
+  $f colon (X, rho_X) -> (Y, p_Y)$ and $g colon (Y, p_Y) -> (Z, p_Z)$ and a test QBS-morphism
   $phi colon Z -> [0, infinity]$, the function $phi compose g$ is itself a QBS-morphism into
   $[0, infinity]$ and so qualifies as a test for $f$; chaining $(*)$ twice gives
   $
-    integral_X phi compose g compose f dif p_X
+    integral_X phi compose g compose f dif rho_X
     <= integral_Y phi compose g dif p_Y
     <= integral_Z phi dif p_Z.
   $
@@ -193,12 +193,12 @@ I will omit to write $M_Y$ and $M_X$ when they are clear from context, and write
 ]
 
 #lemma("QProb has binary products")[
-  $bold("QProb")$ has _binary products_ $((X times Y, M_(X times Y)), p_X times.o p_Y)$,
-  where $times.o$ is the product measure (joint distribution); the projections $pi_X, pi_Y$ are the marginalization maps and measure-preserving, since the marginals of $p_X times.o p_Y$ are exactly $p_X$ and $p_Y$.
+  $bold("QProb")$ has _binary products_ $((X times Y, M_(X times Y)), rho_X times.o p_Y)$,
+  where $times.o$ is the product measure (joint distribution); the projections $pi_X, pi_Y$ are the marginalization maps and measure-preserving, since the marginals of $rho_X times.o p_Y$ are exactly $rho_X$ and $p_Y$.
 ]
 
 #lemma($"QProb" tacklnot tack.r.not "QBS"$)[
-  There is a forgetful functor $U: bold("QProb") -> bold("QBS")$ such that $U(((X, M_X), p_X)) = (X, M_X)$,
+  There is a forgetful functor $U: bold("QProb") -> bold("QBS")$ such that $U(((X, M_X), rho_X)) = (X, M_X)$,
   but it does not generally have a left or a right ajoint.
 
   - If $F: bold("QBS") -> bold("QProb")$, so
@@ -216,19 +216,21 @@ I will omit to write $M_Y$ and $M_X$ when they are clear from context, and write
 
   - If $R: bold("QBS") -> bold("QProb")$,
   $
-    bold("QProb")((X, p_X), R Y) ≌ bold("QBS")(U(X), Y)
+    bold("QProb")((X, rho_X), R Y) ≌ bold("QBS")(U(X), Y)
   $
   a contradiction by a similar argument can be found by taking $X = 2$ and $Y = 1$.
 ]
 
 #observation("Embedding of Prob into QProb")[
-  ???
+  ??? _(Should work only for standard Borel spaces)_
 ]
 
-#definition($"QProb "[0, infinity]$)[
-  We can equip $[0, infinity]$ with the quasi-Borel structure $M_([0, infinity])$ of measurable functions $RR -> [0, infinity]$ and the probability measure ???.
+#proposition($"QProb "[0, infinity]$)[
+  We can equip $[0, infinity]$ with the quasi-Borel structure $M_([0, infinity])$ of measurable functions $RR -> [0, infinity]$ and the probability measure:
+  - Dirac at 1 i.e. $rho_[0, infinity] = (id, delta_1)$ that represents sharp truth values concentrated exactly on the truth threshold.
+  - Log-normal distribution $rho_[0, infinity] = (lambda r. e^r, cal(N)(0, 1))$ which represents mass concentrated near the point 1.
+  - Pareto with shape $s > 0$, i.e. $rho_[0, infinity] = (lambda r. (1 - r)^(-1/s), "Unif"[0, 1])$, supported on $[1, infinity)$ and representing heavy-tailed truth values strictly above 1.
 ]
-
 
 = A doctrine of Quasi-Borel Spaces
 
@@ -237,31 +239,17 @@ $
   L colon bold("QProb")^op -> ([0, infinity])_(times.o,plus.o^*)-bold("Pre")
 $
 whose grading monoid is $[0, infinity]_(plus.o^*)$ and whose enrichment is
-$[0, infinity]_(times.o)$. The fibre over a QProb object $(X, p_X)$ is the set of
+$[0, infinity]_(times.o)$. The fibre over a QProb object $(X, rho_X)$ is the set of
 $[0, infinity]$-valued predicates on $X$:
 
 $
-  L(X, p_X) #h(0.3em) := #h(0.3em)
+  L(X, rho_X) #h(0.3em) := #h(0.3em)
   bold("QBS")((X, M_X), ([0, infinity], M_([0, infinity]))),
 $
 
 i.e. the set of QBS-morphisms $X -> [0, infinity]$. By Proposition 15(1) of @qbs this
 coincides with the $Sigma_(M_X)$-measurable functions $X -> [0, infinity]$, so on standard
 Borel spaces we recover Capucci's fibres verbatim.
-
-#observation("Pointwise quantale on predicates")[
-  The quantale operations $times.o, multimap colon [0, infinity]^2 -> [0, infinity]$ are
-  Borel-measurable, hence QBS-morphisms with respect to the product QBS structure on
-  $[0, infinity]^2$. They therefore restrict to pointwise operations on $L(X, p_X)$:
-  $
-    (phi times.o psi)(x) := phi(x) times.o psi(x),
-    quad
-    (phi multimap psi)(x) := phi(x) multimap psi(x).
-  $
-  This is the only point of contact between the QBS layer and the quantale layer: the QBS
-  structure decides _which functions count as predicates_, the quantale acts on _values_,
-  and pointwise application bridges the two.
-]
 
 == Graded entailment
 
@@ -274,42 +262,40 @@ Borel spaces we recover Capucci's fibres verbatim.
 ]
 
 #definition("Graded entailment")[
-  For $(X, p_X) in bold("QProb")$, $phi, psi in L(X, p_X)$, and softness $p in [0, infinity]$,
+  For $(X, rho_X) in bold("QProb")$ and $phi, psi in L(X, rho_X)$, and a softness $p in (0, infinity)$,
   the _$p$-graded entailment_ is
   $
-    phi attach(tack.r.short, tr: p_X, br: p) psi
+    phi attach(tack.r.short, tr: rho_X, br: p) psi
     #h(0.3em) := #h(0.3em)
-    integral_(x in X)^(-p) (phi multimap psi)(x) dif p_X(x)
-    #h(0.3em) in #h(0.3em) [0, infinity].
+    integral_(x in X)^(-p) (phi multimap psi)(x) dif rho_X (x)
+    #h(0.3em) in #h(0.3em) [0, infinity]_(times.o)
   $
 ]
 
-Unfolding a representative $p_X = [alpha, mu]$, the QBS integral reduces to a $p$-graded
-harmonic integral on $RR$:
+Unfolding a representative $rho_X = (alpha, mu)$, the expression reduces to:
 
 #v(3em)  // space for the top annotations
 $
-  phi attach(tack.r.short, tr: p_X, br: p) psi #h(0.3em) = #h(0.3em)
+  phi attach(tack.r.short, tr: rho_X, br: p) psi #h(0.3em) = #h(0.3em)
   markul(integral_(r in RR)^(-p), tag: #<pmean>, color: #blue)
   markul((phi multimap psi), tag: #<impl>, color: #purple)
   (markul(alpha(r), tag: #<probe>, color: #red))
   dif markul(mu(r), tag: #<base>, color: #teal)
-  #annot(<pmean>, pos: top, dy: -1.6em, leader-connect: "elbow")[Harmonic $p$-mean]
   #annot(<impl>, pos: bottom, dy: 1.2em, leader-connect: "elbow")[$psi / phi$]
   #annot(<probe>, pos: bottom, dy: 2.4em, leader-connect: "elbow")[Sample $X$ through a RV]
   #annot(<base>, pos: bottom + right, dy: 1.2em, leader-connect: "elbow")[Base probability on $RR$]
 $
 #v(3em)  // space for the bottom annotations
 
-Independence of the representative $(alpha, mu)$ follows from the QBS-integration identity
-$ integral_X g dif (alpha, mu) = integral_RR (g compose alpha) dif mu $
-and the equivalence relation $tilde$ defining $p_X$.
 
 == Action on morphisms
 
-For a QProb morphism $f colon (X, p_X) -> (Y, p_Y)$, the action of $L$ is precomposition:
+For a QProb morphism $f colon (X, rho_X) -> (Y, p_Y)$, the action of $L$ is precomposition:
 
-$ f^* colon L(Y, p_Y) -> L(X, p_X), quad f^* (psi) := psi compose f. $
+$
+  f^* colon L(Y, p_Y) -> L(X, rho_X)
+  f^* (psi) := psi compose f.
+$
 
 Well-definedness ($psi compose f$ is a QBS-morphism into $[0, infinity]$) is immediate from
 composition in $bold("QBS")$.
@@ -317,31 +303,31 @@ composition in $bold("QBS")$.
 == Soft-first-order properties
 
 #lemma("Graded reflexivity")[
-  For every $phi in L(X, p_X)$ and every $p in [0, infinity]$,
-  $ phi attach(tack.r.short, tr: p_X, br: p) phi #h(0.3em) >= #h(0.3em) 1, $
+  For every $phi in L(X, rho_X)$ and every $p in [0, infinity]$,
+  $ phi attach(tack.r.short, tr: rho_X, br: p) phi #h(0.3em) >= #h(0.3em) 1, $
   the unit of $times.o$. Indeed $(phi multimap phi)(x) = 1$ wherever $phi(x) in (0, infinity)$,
-  so $ integral_(x in X)^(-p) 1 dif p_X(x) = 1. $
+  so $ integral_(x in X)^(-p) 1 dif rho_X(x) = 1. $
   Proof.
 
   #text(fill: colors.emerald, "TODO")
 ]
 
 #lemma("Graded transitivity (Hölder)")[
-  For every $phi, psi, chi in L(X, p_X)$ and every $p, q in [0, infinity]$,
+  For every $phi, psi, chi in L(X, rho_X)$ and every $p, q in [0, infinity]$,
   $
-    (phi attach(tack.r.short, tr: p_X, br: p) psi)
+    (phi attach(tack.r.short, tr: rho_X, br: p) psi)
     #h(0.3em) times.o #h(0.3em)
-    (psi attach(tack.r.short, tr: p_X, br: q) chi)
+    (psi attach(tack.r.short, tr: rho_X, br: q) chi)
     quad <= quad
-    (phi attach(tack.r.short, tr: p_X, br: p plus.o^* q) chi).
+    (phi attach(tack.r.short, tr: rho_X, br: p plus.o^* q) chi).
   $
   Equivalently, the dual generalized Hölder inequality:
   $
-    integral_(x in X)^(-p) psi/phi dif p_X (x)
+    integral_(x in X)^(-p) psi/phi dif rho_X (x)
     #h(0.3em) times.o #h(0.3em)
-    integral_(x in X)^(-q) chi/psi dif p_X (x)
+    integral_(x in X)^(-q) chi/psi dif rho_X (x)
     quad <= quad
-    integral_(x in X)^(-p plus.o^* q) chi/phi dif p_X (x).
+    integral_(x in X)^(-p plus.o^* q) chi/phi dif rho_X (x).
   $
   Proof.
 
@@ -349,14 +335,14 @@ composition in $bold("QBS")$.
 ]
 
 #lemma("Relaxation")[
-  For every $phi, psi in L(X, p_X)$ and every $p, q in [0, infinity]$ with $p <= q$,
+  For every $phi, psi in L(X, rho_X)$ and every $p, q in [0, infinity]$ with $p <= q$,
   $
-    phi attach(tack.r.short, tr: p_X, br: q) psi
+    phi attach(tack.r.short, tr: rho_X, br: q) psi
     #h(0.3em) <= #h(0.3em)
-    phi attach(tack.r.short, tr: p_X, br: p) psi.
+    phi attach(tack.r.short, tr: rho_X, br: p) psi.
   $
   This is monotonicity of $L^q$-norms in $q$ on a probability space, applied to the QBS
-  integration on $(X, p_X)$ via its reduction to $(RR, mu)$.
+  integration on $(X, rho_X)$ via its reduction to $(RR, mu)$.
   \
   Proof.
 
@@ -364,17 +350,14 @@ composition in $bold("QBS")$.
 ]
 
 #lemma("Pullback preserves entailment")[
-  For every morphism $f colon (X, p_X) -> (Y, p_Y)$ in $bold("QProb")$ and every
+  For every morphism $f colon (X, rho_X) -> (Y, p_Y)$ in $bold("QProb")$ and every
   $psi_1, psi_2 in L(Y, p_Y)$,
   $
     psi_1 attach(tack.r.short, tr: p_Y, br: p) psi_2
     #h(0.3em) <= #h(0.3em)
-    f^* psi_1 attach(tack.r.short, tr: p_X, br: p) f^* psi_2.
+    f^* psi_1 attach(tack.r.short, tr: rho_X, br: p) f^* psi_2.
   $
-  Key identity: $(psi_1 compose f) multimap (psi_2 compose f) = (psi_1 multimap psi_2) compose f$
-  (pointwise quantale operations commute with precomposition), so the right-hand side is
-  exactly the morphism inequality $(*)$ applied to the test function $psi_1 multimap psi_2 in L(Y, p_Y)$.
-  \
+
   Proof.
 
   #text(fill: colors.emerald, "TODO")
@@ -383,11 +366,11 @@ composition in $bold("QBS")$.
 == Quantifiers as projection adjoints
 
 #theorem("Projection adjoints")[
-  For objects $(X, p_X), (Y, p_Y) in bold("QProb")$ and softness $p in [0, infinity]$,
+  For objects $(X, rho_X), (Y, p_Y) in bold("QProb")$ and softness $p in (0, infinity)$,
   reindexing along the projection
-  $pi_X colon (X times Y, p_X times.o p_Y) -> (X, p_X)$
+  $pi_X colon (X times Y, rho_X times.o p_Y) -> (X, rho_X)$
   $
-    pi_X^* colon L(X, p_X) -> L(X times Y, p_X times.o p_Y)
+    pi_X^* colon L(X, rho_X) -> L(X times Y, rho_X times.o p_Y)
   $
   admits both a $p$-graded left and right adjoint:
   $
@@ -401,24 +384,73 @@ composition in $bold("QBS")$.
   $
   satisfying the adjunction laws
   $
-    exists_(pi_X)^p theta attach(tack.r.short, tr: p_X, br: p) phi
+    exists_(pi_X)^p theta attach(tack.r.short, tr: rho_X, br: p) phi
     #h(0.3em) <==> #h(0.3em)
-    theta attach(tack.r.short, tr: p_X times.o p_Y, br: p) pi_X^* phi,
+    theta attach(tack.r.short, tr: rho_X times.o p_Y, br: p) pi_X^* phi,
   $
   and dually for $forall_(pi_X)^p$.
   \
   Proof.
 
-  #text(fill: colors.emerald, "TODO")
+  We argue the left-adjoint equivalence; the right-adjoint is dual, with the roles of
+  $integral^p$ and $integral^(-p)$ exchanged.
+
+  Unfolding graded entailment turns the two sides of the claim into
+  $
+    (exists_(pi_X)^p theta) attach(tack.r.short, tr: rho_X, br: p) phi
+    & = integral_X^(-p) ((integral_Y^p theta(x, y) dif p_Y) multimap phi(x)) dif rho_X, \
+    theta attach(tack.r.short, tr: rho_X times.o p_Y, br: p) pi_X^* phi
+    & = integral_(X times Y)^(-p) (theta(x, y) multimap phi(x)) dif (rho_X times.o p_Y).
+  $
+
+  Since $rho_X times.o p_Y$ is the product measure on the binary product in $bold("QProb")$,
+  ordinary Fubini--Tonelli applied to the non-negative integrand $G^(-p)$, where
+  $G(x, y) := theta(x, y) multimap phi(x)$, lets us decompose the joint integral as an
+  iterated one:
+  $
+    integral_(X times Y)^(-p) G dif (rho_X times.o p_Y) & = (integral_X integral_Y G^(-p) dif p_Y dif rho_X)^(-1/p) \
+                                                        & = integral_X^(-p) integral_Y^(-p) G dif p_Y dif rho_X.
+  $
+
+  It remains to compare the inner integrals fibrewise. For each fixed $x in X$ we claim
+  $
+    (integral_Y^p theta(x, y) dif p_Y) multimap phi(x)
+    = integral_Y^(-p) (theta(x, y) multimap phi(x)) dif p_Y.
+  $
+  Indeed, residuation in $([0, infinity], times.o)$ is division, $a multimap b = b slash a$,
+  and $phi(x)$ is constant in $y$, so both sides evaluate to
+  $phi(x) dot (integral_Y theta^p dif p_Y)^(-1/p)$: the left side directly by definition of
+  $integral^p$, and the right side after pulling the $y$-constant $phi(x)^(-p)$ out of the
+  inner integral,
+  $
+    (integral_Y (phi(x) slash theta)^(-p) dif p_Y)^(-1/p)
+    = (phi(x)^(-p) integral_Y theta^p dif p_Y)^(-1/p)
+    = phi(x) dot (integral_Y theta^p dif p_Y)^(-1/p).
+  $
+
+  Chaining the two displays inside the outer $integral_X^(-p)(-) dif rho_X$,
+  $
+    integral_X^(-p) ((exists_(pi_X)^p theta) multimap phi) dif rho_X
+    & = integral_X^(-p) integral_Y^(-p) (theta multimap pi_X^* phi) dif p_Y dif rho_X \
+    & = integral_(X times Y)^(-p) (theta multimap pi_X^* phi) dif (rho_X times.o p_Y),
+  $
+  whose leftmost and rightmost terms are precisely the two graded entailments of the claim.
+
+  For the right adjoint, the same chain applies once $(star)$ is replaced by its dual
+  $
+    phi(x) multimap (integral_Y^(-p) theta(x, y) dif p_Y)
+    = integral_Y^(-p) (phi(x) multimap theta(x, y)) dif p_Y,
+  $
+  which again reduces to factoring the $y$-constant $1 slash phi(x)$ through the
+  $L^(-p)$-integral.
 ]
 
-#corollary("Higher-order hyperdoctrine of QBS")[
+#remark("Higher-order hyperdoctrine of QBS")[
   The functor
-  $ L colon bold("QProb")^op -> ([0, infinity]_(plus.o^*), [0, infinity]_(times.o))-bold("Pre") $
+  $ L colon bold("QProb")^op -> ([0, infinity])_(times.o,plus.o^*)-bold("Pre") $
   is a soft-first-order hyperdoctrine. Cartesian closure of $bold("QBS")$ then promotes it
-  to a _higher-order_ hyperdoctrine: predicate types $bold("Pred")(X) = [0, infinity]^X$ live
-  in $bold("QBS")$ as bona fide function spaces, enabling internal quantification over
-  predicates, predicates-of-predicates, and function-space contexts.
+  to a _higher-order_ hyperdoctrine where predicate types $bold("Pred")(X) = [0, infinity]^X$ live
+  in $bold("QBS")$ enabling internal quantification over (higher-order) predicates, and function-space contexts.
 ]
 
 // === Old draft (kept for reference) ===
@@ -501,106 +533,54 @@ composition in $bold("QBS")$.
 
 = Sequent calculus
 
-
 == Universal
 
-#v(0.5em)
+#align(center)[
+  #prooftree(rule(
+    name: $forall^q "R"$,
+    $x :^p X, y :^q Y | Gamma attach(tack.r, tr: rho) theta, Delta$,
+    $x :^p X | Gamma attach(tack.r, tr: rho) forall^q y : Y . theta, Delta$,
+  ))
 
-#prooftree(rule(
-  name: $forall^q "R"$,
-  $x :^P X, y :^q Y | Gamma tack.r theta, Delta$,
-  $x :^P X | Gamma tack.r forall^q y : Y . theta, Delta$,
-))
+  #v(0.8em)
 
-#v(0.8em)
-
-#prooftree(rule(
-  name: $forall^q "L"$,
-  $x :^P X, y :^q Y | Gamma, theta tack.r Delta$,
-  $x :^P X | Gamma, forall^q y : Y . theta tack.r Delta$,
-))
-
-#v(0.5em)
+  #prooftree(rule(
+    name: $forall^q "L"$,
+    $x :^p X, y :^q Y | Gamma, theta attach(tack.r, tr: rho) Delta$,
+    $x :^p X | Gamma, forall^q y : Y . theta attach(tack.r, tr: rho) Delta$,
+  ))
+]
 
 Side condition: $y$ does not appear free in $Gamma, Delta$.
-
 Soundness: $forall^q_(pi_X)$ is the $q$-graded right adjoint to $pi_X^*$.
-
-= Equality rules
-
-Equality is interpreted as the quantale metric:
-$ [|t =_A u|] = d_A([|t|], [|u|]) $
-where $d_A$ is the distance on $A$ induced by the quantale $multimap$.
-
-For higher-order Leibniz formulation in QBSProb (requires cartesian closure):
-$ x =_X y := forall^oo phi : "Pred"(X) . phi(x) multimap phi(y) $
-
-== Introduction (reflexivity)
-
-#v(0.5em)
-
-#prooftree(rule(
-  name: $"eq-i"$,
-  $x :^P X | Gamma tack.r Delta$,
-  $x :^P X | Gamma tack.r r(x = x), Delta$,
-))
-
-#v(0.5em)
-
-Soundness: $[|t =_A t|] = d_A([|t|], [|t|]) = 0 <= [|Psi|]$ — the metric vanishes on the diagonal, giving the strongest possible truth value.
-
-== Elimination (substitution)
-
-#v(0.5em)
-
-#prooftree(rule(
-  name: $"eq-e"$,
-  $Gamma, x :^r A | Psi tack.r phi$,
-  $Delta tack.r u : A$,
-  $Delta tack.r v : A$,
-  $Gamma, r Delta | Psi[u\/x], r(u = v) tack.r phi[v\/x]$,
-))
-
-#v(0.5em)
-
-Soundness: The sensitivity $r$ of $phi$ in $x$ means $phi$ is $r$-Lipschitz in that variable, so
-$ |phi[u\/x] - phi[v\/x]| <= r dot d_A(u, v) = r(u = v). $
-Combined with $Psi tack.r phi[u\/x]$ this yields $Psi, r(u = v) tack.r phi[v\/x]$.
-
-= Derived consequences
-
-From (eq-i) and (eq-e) we derive standard equality properties:
-
-== Symmetry
-
-#prooftree(rule(
-  name: $"sym"$,
-  $x : A, y : A | r(x = y) tack.r r(y = x)$,
-))
-
-== Transitivity (= triangle inequality at $r = 1$)
-
-#prooftree(rule(
-  name: $"trans"$,
-  $x : A, y : A, z : A | r(x = y), r(y = z) tack.r r(x = z)$,
-))
-
-== Congruence
-
-If $Gamma, x :^r A tack.r t : B$, $Delta tack.r u : A$, $Delta tack.r v : A$, then:
-
-#prooftree(rule(
-  name: $"cong"$,
-  $Gamma, x :^r A tack.r t : B$,
-  $Delta tack.r u : A$,
-  $Delta tack.r v : A$,
-  $r(u = v) tack.r t[u\/x] =_B t[v\/x]$,
-))
 
 == Leibniz equivalence
 
-The predicates $forall phi : "Pred"^r(A) . phi(x) multimap phi(y)$ and $r(x =_A y)$ are equivalent
-(Proposition 7.3 of Bacci–Møgelberg). This is what makes the higher-order definition coincide with the metric interpretation.
+For higher-order Leibniz formulation in *QProb*:
+
+$ forall x. forall y. x attach(=, br: X) y multimap forall^oo phi : [0, infinity]^X . phi(x) multimap.double phi(y) $
+
+#v(1em)
+
+#align(center)[
+  #prooftree(rule(
+    name: $"eq-i"$,
+    $x :^p X | Gamma attach(tack.r, tr: rho) Delta$,
+    $x :^p X | Gamma attach(tack.r, tr: rho) r(x = x), Delta$,
+  ))
+]
+
+#v(0.5em)
+
+#align(center)[
+  #prooftree(rule(
+    name: $"eq-e"$,
+    $Gamma, x :^r A | Psi attach(tack.r, tr: rho) phi$,
+    $Delta attach(tack.r, tr: rho) u : A$,
+    $Delta attach(tack.r, tr: rho) v : A$,
+    $Gamma, r Delta | Psi[u\/x], r(u = v) attach(tack.r, tr: rho) phi[v\/x]$,
+  ))
+]
 
 
 

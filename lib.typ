@@ -32,11 +32,13 @@
   separator: text(font: fonts.sans)[*.*#h(0.2em)],
   bodyfmt: emph,
   inset: 0em,
+  breakable: true,
 )
 
 #let theorem = thm-base("Theorem")
 #let definition = thm-base("Definition")
 #let lemma = thm-base("Lemma")
+#let proposition = thm-base("Proposition")
 #let observation = thm-base("Observation")
 #let remark = thm-base("Remark")
 #let corollary = thm-base("Corollary")
