@@ -25,24 +25,23 @@
 #let thmtriL = text(sym.triangle.filled.l, font: "DejaVu Sans Mono", size: thm-tri-size, colors.gray)
 
 #let thm-base = thmbox.with(
-  "thm-like",
   base: none,
   titlefmt: it => text(font: fonts.sans)[#thmtriR *#it*],
   namefmt: it => text(font: fonts.sans)[(#it)],
   separator: text(font: fonts.sans)[*.*#h(0.2em)],
   bodyfmt: emph,
   inset: 0em,
-  breakable: true,
 )
 
-#let theorem = thm-base("Theorem")
-#let definition = thm-base("Definition")
-#let lemma = thm-base("Lemma")
-#let proposition = thm-base("Proposition")
-#let observation = thm-base("Observation")
-#let remark = thm-base("Remark")
-#let corollary = thm-base("Corollary")
-#let example = thm-base("Example")
+#let theorem = thm-base("theorem", "Theorem")
+#let definition = thm-base("definition", "Definition")
+#let lemma = thm-base("lemma", "Lemma")
+#let notations = thm-base("notations", "Notations")
+#let remark = thm-base("remark", "Remark")
+#let observation = thm-base("observation", "Observation")
+#let corollary = thm-base("corollary", "Corollary")
+#let example = thm-base("example", "Example")
+#let proposition = thm-base("proposition", "Proposition")
 
 #let prf-base = thmproof.with(
   "proof",
@@ -106,7 +105,7 @@
       set text(11pt, font: fonts.sans, weight: "bold")
       let art-no-page-no = if hide-lipics [#current-page] else if (
         article-no != none
-      ) [#article-no:#current-page] else [#current-page]
+      ) [#article-no:#current-page] else [#text(red)[XX]:#current-page]
       if calc.even(current-page) {
         place(bottom + left, dx: -16mm, art-no-page-no)
         place(bottom + left, title-running)
@@ -135,15 +134,15 @@
         //   event-location,
         // ),
         // LICENSE INFO
-        // grid(
-        //   columns: 2,
-        //   align: bottom,
-        //   column-gutter: 5pt,
-        //   link("https://creativecommons.org/licenses/by/4.0/", image("assets/cc-by.svg", height: .5cm)),
-        //   [
-        //     © #if anonymous { text(red)[Anonymous author(s)] } else { copyright }\;\
-        //     licensed under Creative Commons License CC-BY 4.0],
-        // )
+        grid(
+          columns: 2,
+          align: bottom,
+          column-gutter: 5pt,
+          link("https://creativecommons.org/licenses/by/4.0/", image("assets/cc-by.svg", height: .5cm)),
+          [
+            © #if anonymous { text(red)[Anonymous author(s)] } else { copyright }\;\
+            licensed under Creative Commons License CC-BY 4.0],
+        )
         // EVENT INFO 2
         let last-page = counter(page).final().first()
         if event-long-title != none [#event-long-title. \ ]
@@ -152,20 +151,20 @@
         ]
         if article-no != none [Article No. #article-no\; pp. #article-no:1--#article-no:#last-page]
         // PUBLISHER INFO
-        // grid(
-        //   columns: 2,
-        //   align: bottom,
-        //   column-gutter: 5pt,
-        //   image("assets/lipics-logo-bw.svg", height: 2em),
-        //   [
-        //     #link("https://www.dagstuhl.de/lipics/")[
-        //       Leibniz International Proceedings in Informatics
-        //     ] \
-        //     #link("https://www.dagstuhl.de")[
-        //       Schloss Dagstuhl -- Leibniz-Zentrum für Informatik, Dagstuhl Publishing, Germany
-        //     ]
-        //   ],
-        // )
+        grid(
+          columns: 2,
+          align: bottom,
+          column-gutter: 5pt,
+          image("assets/lipics-logo-bw.svg", height: 2em),
+          [
+            #link("https://www.dagstuhl.de/lipics/")[
+              Leibniz International Proceedings in Informatics
+            ] \
+            #link("https://www.dagstuhl.de")[
+              Schloss Dagstuhl -- Leibniz-Zentrum für Informatik, Dagstuhl Publishing, Germany
+            ]
+          ],
+        )
       } // for odd pages (except the first):
       // display a yellow box on the right of the footer
       // if hide-lipics is false, display the short event title
@@ -431,3 +430,4 @@
   // Content
   content
 }
+

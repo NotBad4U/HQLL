@@ -192,9 +192,38 @@ I will omit to write $M_Y$ and $M_X$ when they are clear from context, and write
   dirac measure at $*$.
 ]
 
-#lemma("QProb has binary products")[
-  $bold("QProb")$ has _binary products_ $((X times Y, M_(X times Y)), rho_X times.o p_Y)$,
-  where $times.o$ is the product measure (joint distribution); the projections $pi_X, pi_Y$ are the marginalization maps and measure-preserving, since the marginals of $rho_X times.o p_Y$ are exactly $rho_X$ and $p_Y$.
+#lemma("QProb has an independent tensor, not binary products")[
+  $bold("QProb")$ has a natural _independent tensor_ given by
+  $
+    (X, rho_X) ⊗ (Y, p_Y)
+    #h(0.3em) := #h(0.3em)
+    (X times Y, rho_X times.o p_Y),
+  $
+  where $rho_X times.o p_Y$ is the product measure. The projections
+  $pi_X, pi_Y$ are measure-preserving, since the marginals of
+  $rho_X times.o p_Y$ are exactly $rho_X$ and $p_Y$.
+
+  Associativity, symmetry, and the unit $(*, delta_*)$ are inherited from the QBS
+  product and from ordinary product measures, so this gives an affine symmetric
+  monoidal structure on $bold("QProb")$.
+
+  However, this tensor is not generally a categorical product. The missing part is
+  the universal pairing map. For example, take the finite discrete QBS
+  $2 = {0, 1}$ with the fair measure
+  $
+    gamma = 1/2 delta_0 + 1/2 delta_1.
+  $
+  Let $f, g colon (2, gamma) -> (2, gamma)$ both be the identity morphism. If
+  $(2, gamma) ⊗ (2, gamma)$ were a categorical product, the pairing
+  $angle.l f, g angle.r colon (2, gamma) -> (2 times 2, gamma times.o gamma)$
+  would have to be a QProb morphism. But this pairing is the diagonal map
+  $Delta(z) = (z, z)$. Its push-forward measure gives mass $1$ to the diagonal
+  $D = { (0, 0), (1, 1) }$, while
+  $
+    (gamma times.o gamma)(D) = 1/2.
+  $
+  Hence $P(Delta)(gamma) <= gamma times.o gamma$ fails. Thus the independent
+  tensor does not satisfy the categorical product universal property.
 ]
 
 #lemma($"QProb" tacklnot tack.r.not "QBS"$)[
@@ -225,11 +254,24 @@ I will omit to write $M_Y$ and $M_X$ when they are clear from context, and write
   ??? _(Should work only for standard Borel spaces)_
 ]
 
-#proposition($"QProb "[0, infinity]$)[
-  We can equip $[0, infinity]$ with the quasi-Borel structure $M_([0, infinity])$ of measurable functions $RR -> [0, infinity]$ and the probability measure:
-  - Dirac at 1 i.e. $rho_[0, infinity] = (id, delta_1)$ that represents sharp truth values concentrated exactly on the truth threshold.
-  - Log-normal distribution $rho_[0, infinity] = (lambda r. e^r, cal(N)(0, 1))$ which represents mass concentrated near the point 1.
-  - Pareto with shape $s > 0$, i.e. $rho_[0, infinity] = (lambda r. (1 - r)^(-1/s), "Unif"[0, 1])$, supported on $[1, infinity)$ and representing heavy-tailed truth values strictly above 1.
+#remark("Truth-value object versus random-weight context")[
+  Let
+  $
+    W := ([0, infinity], M_([0, infinity]))
+  $
+  be the quasi-Borel space whose random elements are the measurable maps
+  $RR -> [0, infinity]$. This is the object of quantitative truth values/weights.
+  No probability measure on $W$ is part of this truth-value structure.
+
+  If we additionally choose a measure $rho_W in P(W)$, then $(W, rho_W)$ is an
+  object of $bold("QProb")$, but it should be read as a _probabilistic context of
+  random weights_, not as the truth-value object itself. For example, one may use:
+  - $rho_W = (lambda r. 1, delta_0)$, representing a degenerate context constantly equal to $1$;
+  - $rho_W = (lambda r. e^r, cal(N)(0, 1))$, giving a log-normal random-weight context;
+  - $rho_W = (lambda r. (1 - r)^(-1/s), "Unif"[0, 1])$ for $s > 0$, giving a Pareto random-weight context supported on $[1, infinity)$.
+
+  These choices are optional context data. In the doctrine below, the measure used for
+  graded entailment is the measure on the _context_ $(X, rho_X)$, not a measure on $W$.
 ]
 
 = A doctrine of Quasi-Borel Spaces
@@ -240,16 +282,18 @@ $
 $
 whose grading monoid is $[0, infinity]_(plus.o^*)$ and whose enrichment is
 $[0, infinity]_(times.o)$. The fibre over a QProb object $(X, rho_X)$ is the set of
-$[0, infinity]$-valued predicates on $X$:
+$W$-valued quantitative predicates on $X$:
 
 $
   L(X, rho_X) #h(0.3em) := #h(0.3em)
-  bold("QBS")((X, M_X), ([0, infinity], M_([0, infinity]))),
+  bold("QBS")((X, M_X), W),
 $
 
-i.e. the set of QBS-morphisms $X -> [0, infinity]$. By Proposition 15(1) of @qbs this
+i.e. the set of QBS-morphisms $X -> W$. By Proposition 15(1) of @qbs this
 coincides with the $Sigma_(M_X)$-measurable functions $X -> [0, infinity]$, so on standard
-Borel spaces we recover Capucci's fibres verbatim.
+Borel spaces we recover Capucci's fibres verbatim. Notice that $rho_X$ is not used to
+_define_ the set of predicates; it is used only below, when graded entailment integrates
+pointwise implication over the context $X$.
 
 == Graded entailment
 
@@ -367,8 +411,8 @@ composition in $bold("QBS")$.
 
 #theorem("Projection adjoints")[
   For objects $(X, rho_X), (Y, p_Y) in bold("QProb")$ and softness $p in (0, infinity)$,
-  reindexing along the projection
-  $pi_X colon (X times Y, rho_X times.o p_Y) -> (X, rho_X)$
+  reindexing along the projection from the independent tensor context
+  $pi_X colon (X, rho_X) ⊗ (Y, p_Y) = (X times Y, rho_X times.o p_Y) -> (X, rho_X)$
   $
     pi_X^* colon L(X, rho_X) -> L(X times Y, rho_X times.o p_Y)
   $
@@ -403,7 +447,7 @@ composition in $bold("QBS")$.
     & = integral_(X times Y)^(-p) (theta(x, y) multimap phi(x)) dif (rho_X times.o p_Y).
   $
 
-  Since $rho_X times.o p_Y$ is the product measure on the binary product in $bold("QProb")$,
+  Since $rho_X times.o p_Y$ is the product measure on the independent tensor context,
   ordinary Fubini--Tonelli applied to the non-negative integrand $G^(-p)$, where
   $G(x, y) := theta(x, y) multimap phi(x)$, lets us decompose the joint integral as an
   iterated one:
@@ -445,12 +489,26 @@ composition in $bold("QBS")$.
   $L^(-p)$-integral.
 ]
 
-#remark("Higher-order hyperdoctrine of QBS")[
+#remark("Higher-order layer from QBS")[
   The functor
   $ L colon bold("QProb")^op -> ([0, infinity])_(times.o,plus.o^*)-bold("Pre") $
-  is a soft-first-order hyperdoctrine. Cartesian closure of $bold("QBS")$ then promotes it
-  to a _higher-order_ hyperdoctrine where predicate types $bold("Pred")(X) = [0, infinity]^X$ live
-  in $bold("QBS")$ enabling internal quantification over (higher-order) predicates, and function-space contexts.
+  is best regarded as a soft _monoidal/affine_ doctrine over measured QBS contexts,
+  not as an ordinary cartesian hyperdoctrine: context extension in $bold("QProb")$ is
+  the independent tensor above, not a categorical product. Cartesian closure of
+  $bold("QBS")$ gives the higher-order structure: for every QBS $X$, the predicate
+  object
+  $
+    bold("Pred")(X) := W^X
+  $
+  exists in $bold("QBS")$, and evaluation
+  $bold("Pred")(X) times X -> W$ is a QBS-morphism.
+
+  However, $bold("Pred")(X)$ is not canonically an object of $bold("QProb")$; making it a
+  probabilistic context would require an additional choice of measure
+  $rho_(bold("Pred")(X)) in P(W^X)$. Consequently, soft quantification over predicates is
+  measure-dependent and is not part of the canonical truth-value structure. Without such
+  an extra measure, quantification over predicates should be understood in the ambient
+  QBS higher-order layer, not as a canonical QProb soft quantifier.
 ]
 
 // === Old draft (kept for reference) ===
@@ -556,9 +614,15 @@ Soundness: $forall^q_(pi_X)$ is the $q$-graded right adjoint to $pi_X^*$.
 
 == Leibniz equivalence
 
-For higher-order Leibniz formulation in *QProb*:
+Since $bold("Pred")(X) = W^X$ lives canonically in $bold("QBS")$ but not canonically in
+$bold("QProb")$, the Leibniz formulation should first be read as an extensional principle
+in the QBS higher-order layer:
 
-$ forall x. forall y. x attach(=, br: X) y multimap forall^oo phi : [0, infinity]^X . phi(x) multimap.double phi(y) $
+$ forall x. forall y. x attach(=, br: X) y equiv forall phi in bold("QBS")(X, W). phi(x) multimap.double phi(y) $
+
+If one wants to read the quantifier over $phi$ as a soft QProb quantifier, one must first
+choose an additional probability measure on $W^X$; the resulting equality notion is then
+relative to that chosen measure.
 
 #v(1em)
 
