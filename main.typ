@@ -192,8 +192,8 @@ I will omit to write $M_Y$ and $M_X$ when they are clear from context, and write
   dirac measure at $*$.
 ]
 
-#lemma("QProb has an independent tensor, not binary products")[
-  $bold("QProb")$ has a natural _independent tensor_ given by
+#lemma("QProb has tensor product")[
+  $bold("QProb")$ has a natural tensor product given by
   $
     (X, rho_X) ⊗ (Y, p_Y)
     #h(0.3em) := #h(0.3em)
@@ -215,7 +215,7 @@ I will omit to write $M_Y$ and $M_X$ when they are clear from context, and write
   $
   Let $f, g colon (2, gamma) -> (2, gamma)$ both be the identity morphism. If
   $(2, gamma) ⊗ (2, gamma)$ were a categorical product, the pairing
-  $angle.l f, g angle.r colon (2, gamma) -> (2 times 2, gamma times.o gamma)$
+  $< f, g > colon (2, gamma) -> (2 times 2, gamma times.o gamma)$
   would have to be a QProb morphism. But this pairing is the diagonal map
   $Delta(z) = (z, z)$. Its push-forward measure gives mass $1$ to the diagonal
   $D = { (0, 0), (1, 1) }$, while
