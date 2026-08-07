@@ -4,6 +4,7 @@
 #import "@preview/showybox:2.0.4": showybox
 #import "@preview/mannot:0.3.1": *
 #import "@preview/curryst:0.6.0": prooftree, rule, rule-set
+#import "@preview/commute:0.3.0": arr, commutative-diagram, node
 
 #let abstract = ""
 
@@ -24,633 +25,728 @@
   keywords: [],
 )
 
-// = Preliminaries: Quasi-Borel Spaces
-
-// The standard measure-theoretic formalization of probability theory is built on
-// the category *Meas* of measurable spaces and measurable functions.
-// While adequate for most classical purposes, this category fails to accommodate
-// higher-order probabilistic reasoning: as shown by Aumann @Aumann1961BorelSF, *Meas* is
-// not cartesian closed, and in particular there is no measurable space of
-// functions $RR -> RR$ @qbs. Quasi-Borel spaces @qbs provide a convenient category in which probability distributions, higher-order functions, and continuous sample spaces coexist.
-
-// The guiding intuition is a shift of emphasis. In the traditional setting one
-// fixes a sample space $(Omega, Sigma_Omega)$ and studies random variables,
-// i.e. measurable maps $Omega -> X$. The $sigma$-algebra $Sigma_X$ on the
-// target plays only an auxiliary role, constraining which maps count as
-// measurable. Quasi-Borel spaces take the set of admissible random variables as
-// primitive, fixing the sample space once and for all to be $RR$, one of the
-// best-behaved standard Borel spaces.
-
-// #definition("Quasi-Borel space")[
-//   A _quasi-Borel space_ is a pair $(X, M_X)$ consisting of a set $X$ together
-//   with a set $M_X subset.eq [RR -> X]$ of functions, called _random elements_
-//   of $X$, satisfying:
-//   + if $alpha in M_X$ and $f colon RR -> RR$ is measurable, then
-//     $alpha compose f in M_X$;
-//   + every constant function $alpha colon RR -> X$ belongs to $M_X$;
-//   + if $RR = union.plus.big_(i in NN) S_i$ is a partition into Borel sets and
-//     $alpha_1, alpha_2, dots in M_X$, then the function $beta$ defined by
-//     $beta(r) = alpha_i (r)$ for $r in S_i$ is also in $M_X$.
-// ]
-
-// The first condition says that $M_X$ is closed under measurable reparametrization
-// of the sample space; the second guarantees that every point of $X$ is observable
-// as a (constant) random element; and the third provides the piecewise-gluing
-// required to make $M_X$ behave like a $sigma$-algebra of random variables.
-
-// #observation("Canonical examples")[
-//   Every measurable space $(X, Sigma_X)$ induces a quasi-Borel space
-//   $(X, M_(Sigma_X))$, where $M_(Sigma_X)$ is the set of measurable functions
-//   $RR -> X$. In particular:
-//   - $RR$ is a quasi-Borel space with $M_RR$ the measurable maps $RR -> RR$;
-//   - the two-element discrete space $2$ is a quasi-Borel space whose random
-//     elements are exactly the characteristic functions of Borel subsets of $RR$.
-// ]
 
 
-// #definition("Category of quasi-Borel spaces")[
-//   The _category of quasi-Borel spaces_ $bold("QBS")$ is defined as follows:
-//   - Objects: quasi-Borel spaces
-//     $ (X, M_X) $  where $M_(Sigma_X)$ is the set of measurable functions $RR -> X$;
-//   - Morphisms:
-//     $(X, M_X) -> (Y, M_Y)$ is a function $f colon X -> Y$ such that $f compose alpha in M_Y$ whenever $alpha in M_X$.
-//     Morphisms compose as functions, and identity functions are morphisms.
-// ]
+// ---------------- notation ----------------
+#let sem(x) = $lr(⟦ #x ⟧)$
+#let nm(x) = $lr(⌜ #x ⌝)$
+#let Prd = math.op("Pred")
+#let Dst = math.op("Dist")
+#let Qbs = math.op("QBS")
+#let Meas = math.op("Meas")
+#let ev = math.op("ev")
+#let cur = math.op("cur")
+#let esssup = math.op("ess sup")
+#let essinf = math.op("ess inf")
+#let ctx = math.op("ctx")
+#let ty = math.op("type")
+#let qdom = math.op("q-dom")
+#let ret = math.op("return")
+#let smp = math.op("sample")
+#let nrm = math.op("norm")
+// Typing colons for context extensions: cartesian (∞) and probabilistic (p)
+#let coo = math.attach(sym.colon, br: sym.infinity)
+#let cp = math.attach(sym.colon, br: math.italic("p"))
+#let sof = math.bb("S")
+#let bG = math.bb("G")
+#let bL = math.bb("L")
 
-// Morphisms between quasi-Borel spaces are analogous to measurable functions between measurable space in *Meas*.
-// We can for example integrate over them. Integration against $(alpha, mu)$ reduces to
-// integration on $RR$ for any morphism $f colon (X, M_X) -> RR$:
-// $
-//   integral f dif (alpha, mu) #h(0.4em) eq.def #h(0.4em)
-//   integral_RR (f compose alpha) dif mu.
-// $
+#let defbox(ttl, body) = showybox(
+  title: ttl,
+  frame: (
+    border-color: rgb("#334155"),
+    title-color: rgb("#334155"),
+    body-color: rgb("#f8fafc"),
+  ),
+  breakable: true,
+  body,
+)
 
-// #example("Probability measures on quasi-Borel spaces")[
-//   Take the two-element discrete space $2 = {0, 1}$ as a quasi-Borel space
-//   $(2, M_2)$, where $M_2$ is the set of measurable maps $RR -> 2$ and $Sigma_2 = {emptyset,{0},{1},{0,1}}$.
-//   These are exactly the characteristic functions $chi_B$ (i.e. indicator functions $bb(1)_B$) of Borel sets $B subset.eq RR$.
+#let rem(body) = block(
+  inset: (left: 7pt),
+  above: 5pt,
+  below: 5pt,
+  stroke: (left: 1.3pt + rgb("#94a3b8")),
+  text(9pt, body),
+)
 
-//   Two random variables in $M_2$:
+#let prov = box(
+  fill: rgb("#fef3c7"),
+  inset: (x: 3pt, y: 1pt),
+  radius: 2pt,
+  text(size: 7.5pt, weight: "bold", fill: rgb("#92400e"), "PROV"),
+)
 
-//   $ alpha = chi_([0, 1)), quad alpha(r) = cases(1 "if" 0 <= r < 1, 0 "otherwise"), $
-//   $ beta = chi_(QQ), quad beta(r) = cases(1 "if" r in QQ, 0 "otherwise"). $
+#let tb(..args) = table(
+  inset: 5pt,
+  stroke: 0.4pt + rgb("#cbd5e1"),
+  ..args,
+)
 
-//   Equip $RR$ with $mu = cal(N)(0,1)$. The push-forwards are Bernoulli measures: $ alpha_* mu = "Bern"(Phi(1) - Phi(0)), quad beta_* mu = "Bern"(0) = delta_0, $ since $QQ$ has Lebesgue (hence Gaussian) measure zero.
-// ]
+// ============================================================
 
-// Unlike *Meas*, the category *QBS* is cartesian closed @qbs. Given the quasi-Borel spaces $(X, M_X)$ and $(Y, M_Y)$, the exponential $Y^X$ has as
-// underlying set the hom-set $bold("QBS")((X, M_X), (Y, M_Y))$ of morphisms, equipped with the random elements
-// $
-//   M_(Y^X) eq.def { alpha colon RR -> Y^X #h(0.3em) | #h(0.3em)
-//     "uncurry"(alpha) in bold("QBS")(RR times X, Y) },
-// $
-// so that a random element of $Y^X$ is exactly a random function $RR times X -> Y$.
-// The evaluation map $Y^X times X -> Y$ is then a morphism with the expected universal property.
-// Cartesian closure is what recovers function spaces such as $RR^RR$, which have no counterpart in *Meas*, and is the structural feature that lets $bold("QBS")$ serve as a semantic domain for higher-order probabilistic programs.
+= Multiplicative Extended Reals $RR_times.o$
 
+*Truth values* $Omega = [0,oo]$.
 
-#let tacklnot = scale(x: -100%)[#sym.tack.r.not]
+#tb(
+  columns: (1fr, auto),
+  table.header([*operations*], [*unit*]),
+  [$a ⊗ b = a b$ #h(1em) ($0 ⊗ oo = 0$)],
+  [$1$],
+  [$a ⊗^* b = a b$ #h(1em) ($0 ⊗^* oo = oo$)],
+  [$1$],
+  [$a^* = 1 slash a$, #h(0.4em) $0^* = oo$],
+  [---],
+  [$a multimap b = a^* ⊗^* b = b slash a$],
+  [---],
+  [$a ⊕^p b = (a^p + b^p)^(1 slash p)$, #h(0.4em) $a ⊕^(-p) b = (a^(-p) + b^(-p))^(-1 slash p)$],
+  [$0$ / $oo$],
+)
 
+*Grades* $sof = [0,oo]$.
 
+#tb(
+  columns: (1fr, auto),
+  table.header([*operations*], [*unit*]),
+  [$p ⊕^* q = (p^(-1) + q^(-1))^(-1)$ #h(0.6em) (harmonic sum)],
+  [$oo$],
+  [$p and q$ #h(0.6em) (meet, used by thinning and substitution)],
+  [$oo$],
+)
 
-= A Locally graded enriched preorders
+= Syntax
 
-The following is an enriched version of the notion of locally $cal(M)$-graded category.
-We first give a direct (and slightly more general) definition of the concept. Let $(cal(M), ⪯, i , dot.o)$
-be an ordered monoid and $(cal(V), <=, I, times.o)$ be a symmetric monoidal preorder.
-
-#definition()[
-  A locally $cal(M)$-graded, $cal(V)$-enriched preorder $((cal(M), cal(V))-bold("Pre")$ for short) $P$  is comprised of the following data
-  - a set of elements $P$
-  - for each $a, b ∈ P$ , and grade $m ∈ cal(M)$, an m-witness of inequality
-    $
-      (a ⊑#sub[m] b) ∈ V ,
-    $
-  - *Graded reflexvity*: $forall a in P, <= a ⊑#sub[i] a$
-  - *Graded transitivity*: $∀a, b, c ∈ P , m, n ∈ cal(M), (a ⊑#sub[m] b) ⊗ (b ⊑#sub[n] c) ≤ (a ⊑_(m dot.o n) c).$
-  - *Relaxation:* $∀a, b ∈ P , m, n ∈ cal(M), m ⪯ n arrow.r (a ⊑#sub[n] b) ≤ (a ⊑#sub[m] b)$.
-]
-
-#definition("Opposite graded order")[
-  The opposite of an $((cal(M), cal(V))$-preorder $(P , ⊑(−))$ is the $((cal(M), cal(V))$-preorder  $P^op$ := (P , ⊒(−)) where
-  $
-    ∀m ∈ cal(M), a, b ∈ P , (a ⊒#sub[m] b) equiv (b ⊑#sub[m] a)
-  $
-]
-
-#definition()[
-  The 2-category $(cal(M), cal(V))-bold("Pre")$ has:
-  - _objects_: $(cal(M), cal(V))-bold("Pre")$,
-  - _morphisms_:  their maps,
-  - _2-cells_: i-witnessed transformations.
-
-  It is monoidal once equipped  with the tensor product of $(cal(M), cal(V))$-preorders.
-]
-
-We can now define the preorder: $(cal(M), cal(V))-bold("Pre")$ for $cal(M) = [0, ∞]_(⊕^*)$ and $cal(V) = [0, ∞]_⊗$
-
-= The QProb category
-
-// Objects of $bold("QBS")$ ignore measures: a QBS-morphism is just a function that pulls
-// random elements back to random elements.
-To get a doctrine that tracks how measures transport, we consider QBS equipped with a probability measure into a category whose morphisms are _measure-non-increasing_, mirroring built on $bold("QBS")$ (i.e. $bold("Meas")$) rather than $bold("Prob")$.
-
-#definition("The category QProb")[
-  - An object of $bold("QProb")$ is a pair $((X, M_X), rho_X)$ where $(X, M_X)$ is a quasi-Borel
-  space and $rho_X in P(X)$ is a probability measure on it. Concretely, $rho_X$ is represented
-  by a pair $(alpha, mu)$ with $alpha in M_X$ and $mu in G(RR)$.
-
-  - A morphism $f colon ((X, M_X), rho_X) -> ((Y, M_Y), p_Y)$ is a QBS-morphism $f colon X -> Y$
-  that is _measure-non-increasing_: for every QBS-morphism $phi colon Y -> [0, infinity]$,
-  $
-    integral_X (phi compose f) dif rho_X
-    quad <= quad
-    integral_Y phi dif p_Y. quad
-  $
-  Equivalently, $P(f)(rho_X) <= p_Y$ as measures on $(Y, Sigma_(M_Y))$.
-]
-
-I will omit to write $M_Y$ and $M_X$ when they are clear from context, and write $(X, rho_X)$ for brevity.
-
-#lemma("QProb is a category")[
-  - Identities are measure-preserving;
-  - For composability, given
-  $f colon (X, rho_X) -> (Y, p_Y)$ and $g colon (Y, p_Y) -> (Z, p_Z)$ and a test QBS-morphism
-  $phi colon Z -> [0, infinity]$, the function $phi compose g$ is itself a QBS-morphism into
-  $[0, infinity]$ and so qualifies as a test for $f$; chaining $(*)$ twice gives
-  $
-    integral_X phi compose g compose f dif rho_X
-    <= integral_Y phi compose g dif p_Y
-    <= integral_Z phi dif p_Z.
-  $
-  Associativity and identity laws are inherited from $bold("QBS")$.
-
-]
-
-#lemma("QProb has terminal object")[
-  $bold("QProb")$ has a _terminal object_ $(*, delta_*)$ i.e. the singleton QBS with its
-  dirac measure at $*$.
-]
-
-#lemma("QProb has tensor product")[
-  $bold("QProb")$ has a natural tensor product given by
-  $
-    (X, rho_X) ⊗ (Y, p_Y)
-    #h(0.3em) := #h(0.3em)
-    (X times Y, rho_X times.o p_Y),
-  $
-  where $rho_X times.o p_Y$ is the product measure. The projections
-  $pi_X, pi_Y$ are measure-preserving, since the marginals of
-  $rho_X times.o p_Y$ are exactly $rho_X$ and $p_Y$.
-
-  Associativity, symmetry, and the unit $(*, delta_*)$ are inherited from the QBS
-  product and from ordinary product measures, so this gives an affine symmetric
-  monoidal structure on $bold("QProb")$.
-
-  However, this tensor is not generally a categorical product. The missing part is
-  the universal pairing map. For example, take the finite discrete QBS
-  $2 = {0, 1}$ with the fair measure
-  $
-    gamma = 1/2 delta_0 + 1/2 delta_1.
-  $
-  Let $f, g colon (2, gamma) -> (2, gamma)$ both be the identity morphism. If
-  $(2, gamma) ⊗ (2, gamma)$ were a categorical product, the pairing
-  $< f, g > colon (2, gamma) -> (2 times 2, gamma times.o gamma)$
-  would have to be a QProb morphism. But this pairing is the diagonal map
-  $Delta(z) = (z, z)$. Its push-forward measure gives mass $1$ to the diagonal
-  $D = { (0, 0), (1, 1) }$, while
-  $
-    (gamma times.o gamma)(D) = 1/2.
-  $
-  Hence $P(Delta)(gamma) <= gamma times.o gamma$ fails. Thus the independent
-  tensor does not satisfy the categorical product universal property.
-]
-
-#lemma($"QProb" tacklnot tack.r.not "QBS"$)[
-  There is a forgetful functor $U: bold("QProb") -> bold("QBS")$ such that $U(((X, M_X), rho_X)) = (X, M_X)$,
-  but it does not generally have a left or a right ajoint.
-
-  - If $F: bold("QBS") -> bold("QProb")$, so
-  $
-    bold("QProb")(F X, ((Y, M_Y), p_Y)) ≌ bold("QBS")(X, U(Y)),
-  $
-  Let $X$ be the terminal object of QBS i.e. 1 and $Y = {0, 1} = 2$. In QBS we have two maps from $1 -> Y$,
-  one selecting 1 and one selecting 0.
-  In QProb, however, there is only one morphism from $F 1$ to $((Y, M_Y), delta)$, since any such morphism must be measure-preserving and the only probability measure on $1$ is the dirac at its unique point.
-
-
-  Because for having a morphism from $F 1 -> (Y, delta_0)$ we would need $delta_1 <= delta_0$ which is false because $delta_1({1}) = 1 > 0 = delta_0({1})$.
-
-  Hence, no such generic $F$ can exist.
-
-  - If $R: bold("QBS") -> bold("QProb")$,
-  $
-    bold("QProb")((X, rho_X), R Y) ≌ bold("QBS")(U(X), Y)
-  $
-  a contradiction by a similar argument can be found by taking $X = 2$ and $Y = 1$.
-]
-
-#observation("Embedding of Prob into QProb")[
-  ??? _(Should work only for standard Borel spaces)_
-]
-
-#remark("Truth-value object versus random-weight context")[
-  Let
-  $
-    W := ([0, infinity], M_([0, infinity]))
-  $
-  be the quasi-Borel space whose random elements are the measurable maps
-  $RR -> [0, infinity]$. This is the object of quantitative truth values/weights.
-  No probability measure on $W$ is part of this truth-value structure.
-
-  If we additionally choose a measure $rho_W in P(W)$, then $(W, rho_W)$ is an
-  object of $bold("QProb")$, but it should be read as a _probabilistic context of
-  random weights_, not as the truth-value object itself. For example, one may use:
-  - $rho_W = (lambda r. 1, delta_0)$, representing a degenerate context constantly equal to $1$;
-  - $rho_W = (lambda r. e^r, cal(N)(0, 1))$, giving a log-normal random-weight context;
-  - $rho_W = (lambda r. (1 - r)^(-1/s), "Unif"[0, 1])$ for $s > 0$, giving a Pareto random-weight context supported on $[1, infinity)$.
-
-  These choices are optional context data. In the doctrine below, the measure used for
-  graded entailment is the measure on the _context_ $(X, rho_X)$, not a measure on $W$.
-]
-
-= A doctrine of Quasi-Borel Spaces
-
-We can now define the doctrine functor:
-$
-  L colon bold("QProb")^op -> ([0, infinity])_(times.o,plus.o^*)-bold("Pre")
-$
-whose grading monoid is $[0, infinity]_(plus.o^*)$ and whose enrichment is
-$[0, infinity]_(times.o)$. The fibre over a QProb object $(X, rho_X)$ is the set of
-$W$-valued quantitative predicates on $X$:
+*Grammar of types*
 
 $
-  L(X, rho_X) #h(0.3em) := #h(0.3em)
-  bold("QBS")((X, M_X), W),
-$
-
-i.e. the set of QBS-morphisms $X -> W$. By Proposition 15(1) of @qbs this
-coincides with the $Sigma_(M_X)$-measurable functions $X -> [0, infinity]$, so on standard
-Borel spaces we recover Capucci's fibres verbatim. Notice that $rho_X$ is not used to
-_define_ the set of predicates; it is used only below, when graded entailment integrates
-pointwise implication over the context $X$.
-
-== Graded entailment
-
-#remark("The generalized means")[
-  If $p$ is a non-zero real number, and ${ x_1, dots, x_n } subset RR_(times.o)$ then the generalized mean or power mean with exponent $p$
-  of these positive real numbers is
-  $
-    M_p (x_1, dots, x_n) := (1/n sum_(i=1)^n x_i^p)^(1/p).
-  $
-]
-
-#definition("Graded entailment")[
-  For $(X, rho_X) in bold("QProb")$ and $phi, psi in L(X, rho_X)$, and a softness $p in (0, infinity)$,
-  the _$p$-graded entailment_ is
-  $
-    phi attach(tack.r.short, tr: rho_X, br: p) psi
-    #h(0.3em) := #h(0.3em)
-    integral_(x in X)^(-p) (phi multimap psi)(x) dif rho_X (x)
-    #h(0.3em) in #h(0.3em) [0, infinity]_(times.o)
-  $
-]
-
-Unfolding a representative $rho_X = (alpha, mu)$, the expression reduces to:
-
-#v(3em)  // space for the top annotations
-$
-  phi attach(tack.r.short, tr: rho_X, br: p) psi #h(0.3em) = #h(0.3em)
-  markul(integral_(r in RR)^(-p), tag: #<pmean>, color: #blue)
-  markul((phi multimap psi), tag: #<impl>, color: #purple)
-  (markul(alpha(r), tag: #<probe>, color: #red))
-  dif markul(mu(r), tag: #<base>, color: #teal)
-  #annot(<impl>, pos: bottom, dy: 1.2em, leader-connect: "elbow")[$psi / phi$]
-  #annot(<probe>, pos: bottom, dy: 2.4em, leader-connect: "elbow")[Sample $X$ through a RV]
-  #annot(<base>, pos: bottom + right, dy: 1.2em, leader-connect: "elbow")[Base probability on $RR$]
-$
-#v(3em)  // space for the bottom annotations
-
-
-== Action on morphisms
-
-For a QProb morphism $f colon (X, rho_X) -> (Y, p_Y)$, the action of $L$ is precomposition:
-
-$
-  f^* colon L(Y, p_Y) -> L(X, rho_X)
-  f^* (psi) := psi compose f.
-$
-
-Well-definedness ($psi compose f$ is a QBS-morphism into $[0, infinity]$) is immediate from
-composition in $bold("QBS")$.
-
-== Soft-first-order properties
-
-#lemma("Graded reflexivity")[
-  For every $phi in L(X, rho_X)$ and every $p in [0, infinity]$,
-  $ phi attach(tack.r.short, tr: rho_X, br: p) phi #h(0.3em) >= #h(0.3em) 1, $
-  the unit of $times.o$. Indeed $(phi multimap phi)(x) = 1$ wherever $phi(x) in (0, infinity)$,
-  so $ integral_(x in X)^(-p) 1 dif rho_X(x) = 1. $
-  Proof.
-
-  #text(fill: colors.emerald, "TODO")
-]
-
-#lemma("Graded transitivity (Hölder)")[
-  For every $phi, psi, chi in L(X, rho_X)$ and every $p, q in [0, infinity]$,
-  $
-    (phi attach(tack.r.short, tr: rho_X, br: p) psi)
-    #h(0.3em) times.o #h(0.3em)
-    (psi attach(tack.r.short, tr: rho_X, br: q) chi)
-    quad <= quad
-    (phi attach(tack.r.short, tr: rho_X, br: p plus.o^* q) chi).
-  $
-  Equivalently, the dual generalized Hölder inequality:
-  $
-    integral_(x in X)^(-p) psi/phi dif rho_X (x)
-    #h(0.3em) times.o #h(0.3em)
-    integral_(x in X)^(-q) chi/psi dif rho_X (x)
-    quad <= quad
-    integral_(x in X)^(-p plus.o^* q) chi/phi dif rho_X (x).
-  $
-  Proof.
-
-  #text(fill: colors.emerald, "TODO")
-]
-
-#lemma("Relaxation")[
-  For every $phi, psi in L(X, rho_X)$ and every $p, q in [0, infinity]$ with $p <= q$,
-  $
-    phi attach(tack.r.short, tr: rho_X, br: q) psi
-    #h(0.3em) <= #h(0.3em)
-    phi attach(tack.r.short, tr: rho_X, br: p) psi.
-  $
-  This is monotonicity of $L^q$-norms in $q$ on a probability space, applied to the QBS
-  integration on $(X, rho_X)$ via its reduction to $(RR, mu)$.
+  & "Regular" quad & A, B & ::= 1 mid(|) RR mid(|) Omega mid(|) A times B mid(|) A -> B mid(|) Dst A \
+  & "Domain" quad  & D, E & ::= D times.o E mid(|) A_omega \
   \
-  Proof.
-
-  #text(fill: colors.emerald, "TODO")
-]
-
-#lemma("Pullback preserves entailment")[
-  For every morphism $f colon (X, rho_X) -> (Y, p_Y)$ in $bold("QProb")$ and every
-  $psi_1, psi_2 in L(Y, p_Y)$,
-  $
-    psi_1 attach(tack.r.short, tr: p_Y, br: p) psi_2
-    #h(0.3em) <= #h(0.3em)
-    f^* psi_1 attach(tack.r.short, tr: rho_X, br: p) f^* psi_2.
-  $
-
-  Proof.
-
-  #text(fill: colors.emerald, "TODO")
-]
-
-== Quantifiers as projection adjoints
-
-#theorem("Projection adjoints")[
-  For objects $(X, rho_X), (Y, p_Y) in bold("QProb")$ and softness $p in (0, infinity)$,
-  reindexing along the projection from the independent tensor context
-  $pi_X colon (X, rho_X) ⊗ (Y, p_Y) = (X times Y, rho_X times.o p_Y) -> (X, rho_X)$
-  $
-    pi_X^* colon L(X, rho_X) -> L(X times Y, rho_X times.o p_Y)
-  $
-  admits both a $p$-graded left and right adjoint:
-  $
-    (exists_(pi_X)^p theta)(x)
-    #h(0.3em) = #h(0.3em)
-    integral_(y in Y)^p theta(x, y) dif p_Y (y),
-    quad
-    (forall_(pi_X)^p theta)(x)
-    #h(0.3em) = #h(0.3em)
-    integral_(y in Y)^(-p) theta(x, y) dif p_Y (y),
-  $
-  satisfying the adjunction laws
-  $
-    exists_(pi_X)^p theta attach(tack.r.short, tr: rho_X, br: p) phi
-    #h(0.3em) <==> #h(0.3em)
-    theta attach(tack.r.short, tr: rho_X times.o p_Y, br: p) pi_X^* phi,
-  $
-  and dually for $forall_(pi_X)^p$.
-  \
-  Proof.
-
-  We argue the left-adjoint equivalence; the right-adjoint is dual, with the roles of
-  $integral^p$ and $integral^(-p)$ exchanged.
-
-  Unfolding graded entailment turns the two sides of the claim into
-  $
-    (exists_(pi_X)^p theta) attach(tack.r.short, tr: rho_X, br: p) phi
-    & = integral_X^(-p) ((integral_Y^p theta(x, y) dif p_Y) multimap phi(x)) dif rho_X, \
-    theta attach(tack.r.short, tr: rho_X times.o p_Y, br: p) pi_X^* phi
-    & = integral_(X times Y)^(-p) (theta(x, y) multimap phi(x)) dif (rho_X times.o p_Y).
-  $
-
-  Since $rho_X times.o p_Y$ is the product measure on the independent tensor context,
-  ordinary Fubini--Tonelli applied to the non-negative integrand $G^(-p)$, where
-  $G(x, y) := theta(x, y) multimap phi(x)$, lets us decompose the joint integral as an
-  iterated one:
-  $
-    integral_(X times Y)^(-p) G dif (rho_X times.o p_Y) & = (integral_X integral_Y G^(-p) dif p_Y dif rho_X)^(-1/p) \
-                                                        & = integral_X^(-p) integral_Y^(-p) G dif p_Y dif rho_X.
-  $
-
-  It remains to compare the inner integrals fibrewise. For each fixed $x in X$ we claim
-  $
-    (integral_Y^p theta(x, y) dif p_Y) multimap phi(x)
-    = integral_Y^(-p) (theta(x, y) multimap phi(x)) dif p_Y.
-  $
-  Indeed, residuation in $([0, infinity], times.o)$ is division, $a multimap b = b slash a$,
-  and $phi(x)$ is constant in $y$, so both sides evaluate to
-  $phi(x) dot (integral_Y theta^p dif p_Y)^(-1/p)$: the left side directly by definition of
-  $integral^p$, and the right side after pulling the $y$-constant $phi(x)^(-p)$ out of the
-  inner integral,
-  $
-    (integral_Y (phi(x) slash theta)^(-p) dif p_Y)^(-1/p)
-    = (phi(x)^(-p) integral_Y theta^p dif p_Y)^(-1/p)
-    = phi(x) dot (integral_Y theta^p dif p_Y)^(-1/p).
-  $
-
-  Chaining the two displays inside the outer $integral_X^(-p)(-) dif rho_X$,
-  $
-    integral_X^(-p) ((exists_(pi_X)^p theta) multimap phi) dif rho_X
-    & = integral_X^(-p) integral_Y^(-p) (theta multimap pi_X^* phi) dif p_Y dif rho_X \
-    & = integral_(X times Y)^(-p) (theta multimap pi_X^* phi) dif (rho_X times.o p_Y),
-  $
-  whose leftmost and rightmost terms are precisely the two graded entailments of the claim.
-
-  For the right adjoint, the same chain applies once $(star)$ is replaced by its dual
-  $
-    phi(x) multimap (integral_Y^(-p) theta(x, y) dif p_Y)
-    = integral_Y^(-p) (phi(x) multimap theta(x, y)) dif p_Y,
-  $
-  which again reduces to factoring the $y$-constant $1 slash phi(x)$ through the
-  $L^(-p)$-integral.
-]
-
-#remark("Higher-order layer from QBS")[
-  The functor
-  $ L colon bold("QProb")^op -> ([0, infinity])_(times.o,plus.o^*)-bold("Pre") $
-  is best regarded as a soft _monoidal/affine_ doctrine over measured QBS contexts,
-  not as an ordinary cartesian hyperdoctrine: context extension in $bold("QProb")$ is
-  the independent tensor above, not a categorical product. Cartesian closure of
-  $bold("QBS")$ gives the higher-order structure: for every QBS $X$, the predicate
-  object
-  $
-    bold("Pred")(X) := W^X
-  $
-  exists in $bold("QBS")$, and evaluation
-  $bold("Pred")(X) times X -> W$ is a QBS-morphism.
-
-  However, $bold("Pred")(X)$ is not canonically an object of $bold("QProb")$; making it a
-  probabilistic context would require an additional choice of measure
-  $rho_(bold("Pred")(X)) in P(W^X)$. Consequently, soft quantification over predicates is
-  measure-dependent and is not part of the canonical truth-value structure. Without such
-  an extra measure, quantification over predicates should be understood in the ambient
-  QBS higher-order layer, not as a canonical QProb soft quantifier.
-]
-
-// === Old draft (kept for reference) ===
-
-// We fix a Borel probability measure $mu in P(RR)$, one may take $mu$ to be the uniform distribution on the unit interval $[0, 1]$ without loss of generality.
-
-// #observation()[
-//   A probability measure on a quasi-Borel space $(X, M_X)$ is a pair $(alpha, mu)$ of $alpha in M_X$ and a probability measure $mu$ on $RR$.
-// ]
-
-// Consider now the sets $L(X, M_X)$ of QBS morphisms $(X, M_X) -> [0, infinity]$, where $[0, infinity]$ is the quasi-Borel space with underlying set $[0, infinity]$ and random elements the measurable functions $RR -> [0, infinity]$. For each $p in (0 , + infinity)$ define
-
-// // $
-// //   phi scripts(tack.r.short)^mu_p psi := and.big_(alpha in M_X) integral_(x in RR)^(-p) psi(x) multimap psi(x) dot mu(x)
-// // $
-// //
-
-// #v(3em)  // space for the top annotations
-// $
-//   phi scripts(tack.r.short)^mu_p psi :=
-//   markul(and.big_(alpha in M_X), tag: #<meet>, color: #olive)
-//   markul(integral_(r in RR)^(-p), tag: #<pmean>, color: #blue)
-//   markul((phi multimap psi), tag: #<impl>, color: #purple)
-//   (markul(alpha(r), tag: #<probe>, color: #red))
-//   dif markul(mu(r), tag: #<base>, color: #teal)
-//   #annot(<meet>, pos: top + left, dy: -1.6em, leader-connect: "elbow")[Meet over QBS probes]
-//   #annot(<pmean>, pos: top, dy: -1.6em, leader-connect: "elbow")[Harmonic $p$-mean ]
-//   #annot(<impl>, pos: bottom, dy: 1.2em, leader-connect: "elbow")[$psi / phi$]
-//   #annot(<probe>, pos: bottom, dy: 2.4em, leader-connect: "elbow")[Sample $X$ through a RV]
-//   #annot(<base>, pos: bottom + right, dy: 1.2em, leader-connect: "elbow")[Base probability on $RR$]
-// $
-// #v(3em)  // space for the bottom annotations
-
-// This definition satisfies the following properties:
-
-// #lemma("Graded reflexivity")[
-//   For every $phi in L(X, M_X)$ and every $p in (0, infinity)$,
-//   $ phi attach(tack.r.short, tr: mu, br: p) phi. $
-//   in other words,
-//   $
-//     1 = and.big_(alpha in M_X) integral_(r in RR)^(-infinity)1 dif mu(x) <= and.big_(alpha in M_X) integral_(r in RR)^(-infinity) phi/phi dif mu(x).
-//   $
-//   Proof.
-
-//   #text(fill: colors.emerald, "TODO")
-// ]
-
-// #lemma("Graded transitivity")[
-//   For every $phi, psi, chi in L(X, M_X)$ and every $p, q in (0, infinity)$,
-//   $
-//     phi attach(tack.r.short, tr: mu, br: p) psi quad "and" quad psi attach(tack.r.short, tr: mu, br: q) chi
-//     quad ==> quad phi attach(tack.r.short, tr: mu, br: p plus.o^* q) chi.
-//   $
-//   which amounts to dual generalized Hölder inequality:
-//   $
-//     and.big_(alpha in M_X) integral_(r in RR)^(-p) psi/phi dif mu(x)
-//     times.o integral_(r in RR)^(-q) chi/psi dif mu(x)
-//     <= and.big_(alpha in M_X) integral_(r in RR)^(-p plus.o^* q) chi/phi dif mu(x).
-//   $
-//   Proof.
-
-//   #text(fill: colors.emerald, "TODO")
-// ]
-
-// #lemma("Relaxation")[
-//   For every $phi, psi in L(X, M_X)$ and every $p, q in (0, infinity)$ with $p <= q$,
-//   $
-//     phi attach(tack.r.short, tr: mu, br: p) psi <= phi attach(tack.r.short, tr: mu, br: q) psi.
-//   $
-//   by general properties of $L^p$ norms over probability spaces.
-//   \
-//   Proof.
-
-//   #text(fill: colors.emerald, "TODO")
-// ]
-
-// #corollary("The higher-order hyperdoctrine of Quasi-Borel Spaces")[
-//   The higher-order hyperdoctrine of Quasi-Borel Spaces is the functor $L : bold("QBS")^op -> (plus.o^*, times.o) bold("-Prd")$
-// ]
-
-= Sequent calculus
-
-== Universal
-
-#align(center)[
-  #prooftree(rule(
-    name: $forall^q "R"$,
-    $x :^p X, y :^q Y | Gamma attach(tack.r, tr: rho) theta, Delta$,
-    $x :^p X | Gamma attach(tack.r, tr: rho) forall^q y : Y . theta, Delta$,
-  ))
-
-  #v(0.8em)
-
-  #prooftree(rule(
-    name: $forall^q "L"$,
-    $x :^p X, y :^q Y | Gamma, theta attach(tack.r, tr: rho) Delta$,
-    $x :^p X | Gamma, forall^q y : Y . theta attach(tack.r, tr: rho) Delta$,
-  ))
-]
-
-Side condition: $y$ does not appear free in $Gamma, Delta$.
-Soundness: $forall^q_(pi_X)$ is the $q$-graded right adjoint to $pi_X^*$.
-
-== Leibniz equivalence
-
-Since $bold("Pred")(X) = W^X$ lives canonically in $bold("QBS")$ but not canonically in
-$bold("QProb")$, the Leibniz formulation should first be read as an extensional principle
-in the QBS higher-order layer:
-
-$ forall x. forall y. x attach(=, br: X) y equiv forall phi in bold("QBS")(X, W). phi(x) multimap.double phi(y) $
-
-If one wants to read the quantifier over $phi$ as a soft QProb quantifier, one must first
-choose an additional probability measure on $W^X$; the resulting equality notion is then
-relative to that chosen measure.
+  & "Carrier" quad &      & |A_omega| ≡ A quad quad |D times.o E| ≡ |D| times |E| \
+$
 
 #v(1em)
 
-#align(center)[
-  #prooftree(rule(
-    name: $"eq-i"$,
-    $x :^p X | Gamma attach(tack.r, tr: rho) Delta$,
-    $x :^p X | Gamma attach(tack.r, tr: rho) r(x = x), Delta$,
-  ))
+Formulas are the terms of type $Omega$.
+Regular type $A$ or $RR$ are interpreted as QBS without measure associated and
+$A_omega$ is interpreted as QBS with the measure $omega: "Dist" A$ associated.
+The sort separation between $A$ and $A_omega$  is what preserves cartesian closure i.e
+$A_omega -> B$, $"Dist" A_omega$ and $(A_omega)_omega'$ are not well-formed types , so no exponential of a measured object is ever demanded.
+
+
+===== Terms
+
+$
+     t, s & ::= x mid(|) ast mid(|) ⟨ t\, s ⟩
+            mid(|) pi_1 t mid(|) pi_2 t mid(|) lambda x : A. t mid(|) t space s
+            mid(|) c_Omega
+            mid(|) hat(forall)^p (t\, s) mid(|) hat(exists)^p (t\, s) \
+     M, N & ::= ret t mid(|) "let" x <- M "in" N
+            mid(|) smp_cal(D) mid(|) nrm (M) \
+  c_Omega & ::= 0 mid(|) 1 mid(|) oo mid(|) ⊗
+            mid(|) ⊗^* mid(|) multimap mid(|) (-)^*
+            mid(|) ⊕^p mid(|) ⊕^(-p) mid(|) (-)^p
+$
+
+#v(1em)
+
+Arities:
+- $⊗, ⊗^*, multimap, ⊕^(plus.minus p) : Omega times Omega -> Omega$;
+- $(-)^*, (-)^p : Omega -> Omega$;
+- $hat(forall)^p, hat(exists)^p : Dst A times Prd A -> Omega$.
+
+
+#definition[
+  - $"Pred" A ≔ A -> Omega$
+  - $"Pred"^2 A ≔ ("Pred" A) -> Omega$
+  - $forall^p (x : A_omega). phi ≔ hat(forall)^p (omega\, lambda x : A. phi),$
+  - $exists^p (x : A_omega). phi ≔ hat(exists)^p (omega\, lambda x : A. phi),$
 ]
 
-#v(0.5em)
 
-#align(center)[
-  #prooftree(rule(
-    name: $"eq-e"$,
-    $Gamma, x :^r A | Psi attach(tack.r, tr: rho) phi$,
-    $Delta attach(tack.r, tr: rho) u : A$,
-    $Delta attach(tack.r, tr: rho) v : A$,
-    $Gamma, r Delta | Psi[u\/x], r(u = v) attach(tack.r, tr: rho) phi[v\/x]$,
-  ))
+*Conversion rules:*
+
+#grid(
+  columns: (1fr, 1fr),
+  column-gutter: 16pt,
+  row-gutter: 7pt,
+  align: left,
+  $(lambda x : A. space t) space s ≡ t[s slash x]$, $⟨ pi_1 t, pi_2 t ⟩ ≡ t$,
+  $(lambda x : A. space phi) space t ≡ phi[t slash x]$, $pi_i ⟨ t_1, t_2 ⟩ ≡ t_i$,
+  $(lambda u : Prd A. space Phi) space psi ≡ Phi[psi slash u]$,
+  $lambda x : A. space (t space x) ≡ t quad (x in.not "FV"(t))$,
+
+  $"let" x <- ret t "in" N ≡ N[t slash x]$, $lambda x : A. space (u space x) ≡ u quad (u : Prd A)$,
+  $"let" x <- M "in" ret x ≡ M$, $hat(forall)^p (nu, u) = hat(forall)^p (nu', u) quad ("if" nu equiv nu')$,
+)
+
+== Judgement
+
+We have the basic judgement forms:
+
+- $A ty$ \ saying that "$A$ is a well-formed *value* type";
+- $D "dom"$\ saying that "$D$ is a well-formed *domain* type";
+- $Gamma ctx$ \ saying that "$Gamma$ is a well-formed context"
+- $Gamma tack t : A$ \ saying that "$t$ is a well-typed term of value type $A$ in context $Gamma$";
+- $Gamma tack phi "prop"$ for the special case $A = Omega$;
+
+#v(2em)
+
+In addition, there are judgements for definitional equality of types and of
+terms:
+
+
+#align(center, grid(
+  columns: (1fr, 1fr, 1fr),
+  gutter: 6pt,
+  $A ≡ A' ty$, $D ≡ D' "dom"$, $Gamma tack t ≡ t' : A$,
+))
+
+
+
+
+== Context
+
+Contexts are ordered lists and admit neither exchange nor contraction in general.
+The grade sits on the variable; the measure sits on its domain type.
+
+$
+  Gamma ::= diamond.small mid(|) Gamma attach(:, br: infinity) A mid(|) Gamma attach(:, br: p) D quad (p < infinity)
+$
+
+*Context formation rules:*
+
+#grid(
+  columns: (1fr, 1fr, 1fr),
+  gutter: 6pt,
+  prooftree(rule(name: [C-Emp], $diamond.small ctx$)),
+  prooftree(rule(name: [$"C-Ext"_oo$], $Gamma ctx$, $A ty$, $Gamma\, x coo A ctx$)),
+  prooftree(rule(name: [$"C-Ext"_D$], $Gamma ctx$, $D "dom"$, $Gamma\, x cp D ctx$)),
+)
+
+== Typing and formation
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 9pt,
+  row-gutter: 12pt,
+  prooftree(rule(name: [Dom], $A ty$, $dot.c tack omega : Dst A$, $A_omega "dom"$)),
+  prooftree(rule(name: [$"Dom"^⊗$], $D "dom"$, $E "dom"$, $D ⊗ E "dom"$)),
+
+  prooftree(rule(name: [Prop], $Gamma tack phi : Omega$, $Gamma tack phi "prop"$)),
+  prooftree(rule(
+    name: [Var],
+    $Gamma\, x cp A \, Gamma' tack x : A$,
+  )),
+
+  prooftree(rule(name: [Unit], $Gamma ctx$, $Gamma tack ast : 1$)),
+
+  prooftree(rule(name: [Pair], $Gamma tack t : A$, $Gamma tack s : B$, $Gamma tack ⟨ t\, s ⟩ : A times B$)),
+  prooftree(rule(name: [Proj], $Gamma tack t : A_1 times A_2$, $Gamma tack pi_i t : A_i$)),
+
+  prooftree(rule(name: [Abs], $Gamma\, x coo A tack t : B$, $Gamma tack lambda x : A. t : A -> B$)),
+  prooftree(rule(name: [App], $Gamma tack t : A -> B$, $Gamma tack s : A$, $Gamma tack t space s : B$)),
+
+  prooftree(rule(name: [P-Abs], $Gamma\, x coo A tack phi "prop"$, $Gamma tack lambda x : A. phi : Prd A$)),
+  prooftree(rule(name: [P-App], $Gamma tack u : Prd A$, $Gamma tack t : A$, $Gamma tack u space t "prop"$)),
+
+  prooftree(rule(name: [Conn], $Gamma tack phi "prop"$, $Gamma tack psi "prop"$, $Gamma tack phi star psi "prop"$)),
+  prooftree(rule(
+    name: [Q-Int],
+    $Gamma tack nu : Dst A$,
+    $Gamma tack u : Prd A$,
+    $Gamma tack hat(forall)^p (nu\, u) "prop"$,
+  )),
+)
+
+#v(6pt)
+#align(center, prooftree(rule(
+  name: [Q-Bind],
+  $Gamma\, x cp D tack phi "prop"$,
+  $D "dom"$,
+  $p < oo$,
+  $Gamma tack forall^p (x : D). phi "prop"$,
+)))
+
+#v(1em)
+
+*Monadic rules:*
+
+#v(1em)
+
+#grid(
+  columns: (1fr, 1fr, 1fr),
+  gutter: 7pt,
+  row-gutter: 10pt,
+  prooftree(rule(name: [Ret], $Gamma tack t : A$, $Gamma tack ret t : Dst A$)),
+  prooftree(rule(name: [Smp], $cal(D) "std. Borel on" A$, $Gamma tack smp_cal(D) : Dst A$)),
+  prooftree(rule(name: [Nrm], $Gamma tack M : Dst A$, $Gamma tack nrm (M) : Dst A$)),
+)
+#v(6pt)
+#align(center, prooftree(rule(
+  name: [Let],
+  $Gamma tack M : Dst A$,
+  $Gamma\, x coo A tack N : Dst B$,
+  $Gamma tack "let" x <- M "in" N : Dst B$,
+)))
+
+
+= Semantics
+
+== Preliminaries
+
+#definition("QBS")[
+  $X = (|X|, MM_X)$ is a *quasi-Borel space* with a underlying set $|X|$ and a set of functions $M_X subset.eq { RR -> |X|}$ closed under precomposition with Borel maps, containing constants, closed under countable Borel gluing. Given $f: X -> Y$ is a morphism if and only if $f compose alpha in M_Y$ for all $alpha in M_X$.
+  - QBS is cartesian closed: $M_(Y^X) = { alpha mid(|) "uncurry"(alpha) in "QBS"(RR times X, Y)}$
+  - QBS is well pointed
+  - $Sigma_(M^X) = { U mid(|) forall alpha in M_X dot alpha^(-1) U in Sigma_RR}$ is the induced 𝜎-algebra.
+  - The commutative monad  $"Dist" X = { [alpha, mu] mid(|) alpha in M_X, mu in "Prob"(RR) }$ modulo equal push-forward, with
+    $
+      integral_(X) f d[alpha, mu] = integral_(RR) f compose alpha d mu
+    $
 ]
 
+#definition("Probability measure")[
+  A probability measure on a QBS $X$ is a pair $(alpha, mu)$ with $alpha in M_X$ and $mu$ a probability measure on $RR$, modulo equal push-forward. Then
+  - $|cal(P)(X)| = { (alpha, mu) "probability measure on" (X, M_X) } slash ~$
+  - $M_(cal(P)(X)) = { beta : RR -> cal(P)(X) mid(|) exists alpha in M_X, g in "Meas"(RR, G(RR)), forall r, beta(r) = (alpha, g(r)) }$
+  so that $cal(P)(X) = (|cal(P)(X)|, M_(cal(P)(X)))$ is a QBS with the induced 𝜎-algebra $Sigma_(M^X)$.
+]
+
+We now define the category of measured quasi-Borel spaces that will interpret our domain types.
+
+#definition($"Category QBS"_C$)[
+  - Objects are $(|X|, M_X, omega_X)$, *measured quasi-Borel spaces*, written
+    $(X, omega)$, with a QBS structure $(|X|, M_X)$ and a measure
+    $omega_X in |cal(P)(X)|$.
+
+  - Morphisms $f : (X, omega) -> (Y, rho)$ are QBS morphisms $f : X -> Y$ of
+    *finite compression*, $C(f) < oo$. Writing
+    $f_* omega := l_Y (cal(P)(f)(omega))$ for the induced measure on
+    $Sigma_(M_Y)$, the *measure compression* of $f$ is
+    $
+      C(f) := ⋀ {B in [0,oo] mid(|) forall U in Sigma_(M_Y). space
+        (f_* omega)(U) <= B dot rho(U)},
+    $
+    the least $B$ with $f_* omega <= B ⊗^* rho$. Equivalently
+    $f_* omega << rho$ with $(dif f_* omega) slash (dif rho)$ essentially
+    bounded by $C(f)$; and $C(f) = 1$ iff $f$ is measure-preserving.
+
+  - Identities and composition are those of $"QBS"$. This is well defined
+    because $C("id"_X) = 1$ and $C$ is lax,
+    $ C(g compose f) <= C(f) dot C(g), $
+    so finite compression is closed under composition.
+]
+
+#lemma([Monoidal product in $"QBS"_C$])[
+  $
+    (X, omega) ⊗ (Y, rho) := (X times Y, space omega ⊗ rho), quad quad
+    I := (1, delta_ast),
+  $
+  where $omega ⊗ rho$ is the product measure, available because $cal(P)$ is
+  commutative. The projections are morphisms with $C(pi_i) = 1$, since
+  $(pi_1)_* (omega ⊗ rho) = omega$ and $(pi_2)_* (omega ⊗ rho) = rho$; so is
+  $! : (X,omega) -> I$. Hence $⊗$ is *semicartesian monoidal*: unit terminal,
+  projections everywhere.
+
+  #align(center)[
+    #commutative-diagram(
+      node((0, 1), $(Z, tau)$),
+      node((1, 0), $(X, omega)$),
+      node((1, 1), $(X times Y, space omega ⊗ rho)$),
+      node((1, 2), $(Y, rho)$),
+      arr((0, 1), (1, 0), $f$, label-pos: right),
+      arr((0, 1), (1, 1), $⟨f\, g⟩$, "dashed"),
+      arr((0, 1), (1, 2), $g$),
+      arr((1, 1), (1, 0), $pi_1$),
+      arr((1, 1), (1, 2), $pi_2$, label-pos: right),
+    )
+  ]
+
+  It is *not* cartesian: the pairing factors as
+  $⟨f,g⟩ = (f times g) compose Delta_Z$, so
+  $C(⟨f,g⟩) <= C(Delta_Z) dot C(f) dot C(g)$ and the dashed map exists only
+  where $Delta_Z$ does.
+]
+
+#lemma([Diagonals in $"QBS"_C$])[
+  For $Delta_X = ⟨"id", "id"⟩$ one has
+  $(Delta_X)_* omega (A times B) = omega(A inter B)$, so the compression
+  condition at $A = B$ reads $omega(A) <= C dot omega(A)^2$. Hence
+  $
+    C(Delta_X) = ⋁ {1 slash omega(A) mid(|) A in Sigma_(M_X), space omega(A) > 0}
+    = 1 slash inf{omega(A) mid(|) omega(A) > 0},
+  $
+  so $Delta_X$ is a morphism of $"QBS"_C$ iff $omega$ is *atomic with atoms
+  bounded below*, and never when $omega$ is atomless.
+
+  #align(center)[
+    #commutative-diagram(
+      node((0, 0), $(X, omega)$),
+      node((0, 1), $(X times X, space omega ⊗ omega)$),
+      node((0, 2), $(X, omega)$),
+      arr((0, 0), (0, 1), $Delta_X$),
+      arr((0, 1), (0, 2), $pi_i$),
+      arr((0, 0), (0, 2), $"id"_X$, curve: -15deg),
+    )
+  ]
+]
+
+#definition([Forgetful functor V])[
+  $V : "QBS"_C -> "QBS"$ acts by $(X, omega) |-> (|X|, M_X)$ on objects and by
+  $f |-> f$ on morphisms. The functor drops the measure and forgets the compression condition.
+  It is *faithful* but not full: a $"QBS"$-morphism with
+  $C(f) = oo$ is not a morphism of $"QBS"_C$. It sends $⊗$ to the cartesian
+  product, $V((X,omega) ⊗ (Y,rho)) = V(X,omega) times V(Y,rho)$, and the unit
+  to the terminal object.
+]
+
+== Types
+
+We define the semantics of types recursively as follows:
+
+#grid(
+  columns: (1fr, 1fr, 1fr),
+  align: center,
+  row-gutter: 10pt,
+  $sem(1) = 1$, $sem(RR) = RR$, $sem(Omega) = [0,oo]$,
+  $sem(A times B) = sem(A) times sem(B)$, $sem(A -> B) = sem(B)^(sem(A))$, $sem(Dst A) = cal(P) sem(A)$,
+  $sem(Prd A) = Omega^(sem(A))$,
+) <eq:types>
+
+
+Where $[0, oo]$ is standard Borel with $M_Omega = {"Borel" RR -> [0, oo] }$. We interpret domain types as the followings:
+
+$
+  sem(A_omega) := (sem(A), sem(omega)) in Qbs_C, quad quad
+  sem(D ⊗ E) := sem(D) times sem(E) "with" omega_D ⊗ omega_E, quad quad
+$ <eq:dom>
+
+== Contexts
+
+#definition([Category $"Ctx"$ of graded contexts])[
+  - *Objects* are finite ordered lists $Gamma = ((X_1, p_1), dots, (X_n, p_n))$
+    of *slots*, where $p_i in SS = [0,oo]$ is a softness and
+    $
+      cases(
+        X_i in "QBS"_C quad p_i < oo,
+        X_i in "QBS" quad p_i = oo
+      )
+    $
+    Write $P = (p_1, dots, p_n) in SS^n$ to denotes the grade vector of $Gamma$ and $|Gamma| = n$.
+
+  - *Morphisms* $(rho, f) : ((X_i, p_i))_(i <= n) -> ((Y_j, q_j))_(j <= m)$
+    consist of a *thinning* --- a monotone injection $rho : [m] -> [n]$ ---
+    together with, for each $j <= m$, a morphism
+    $f_j : X_(rho(j)) -> Y_j$ of $"QBS"_C$ if the slot $Y_j$ is measured, and of
+    $"QBS"$ otherwise.
+
+  // - *Identities and composition.*
+  //   $
+  //     "id"_Gamma := ("id"_([n]), ("id"_(X_i))_(i <= n)), quad quad
+  //     (rho, f) compose (rho', f') := (rho compose rho',
+  //       space (f'_j compose f_(rho'(j)))_(j)).
+  //   $
+  //   Well defined because thinnings compose and each $"QBS"_C$-hom is closed
+  //   under composition ($C$ is lax, $C("id") = 1$).
+
+  - *Ordered products* by concatenation,
+    $Gamma ; Delta := (X_1, p_1; dots; X_n, p_n; Z_1, r_1; dots; Z_k, r_k)$,.
+  // with unit the empty list. Projections are the thinnings $(epsilon, ("id"))$;
+  // there are *no diagonals* in general, so this is a semicartesian monoidal
+  // structure and not a cartesian one.
+
+  // - *Grading.* Each hom carries $K^(rho, f)_P := ⨂_(j <= m) K_(q_j) (f_j)$, and
+  //   grades transport along thinnings by
+  //   $rho_* (P)_i := and_(rho(j) = i) p_j$ (with $and emptyset = oo$).
+
+  // - *Subcategories.* $"Ctx"_1$ is the wide sub-2-category on morphisms with
+  //   $K^(rho,f)_P = 1$ (all components measure-preserving); $"Ctx"_oo$ is the
+  //   full subcategory of one-slot unmeasured lists, and $"Ctx"_oo tilde.equiv "QBS"$.
+
+  // #v(4pt)
+  // The forgetful functor $U$ takes a context to its underlying space, and $iota$
+  // embeds $"QBS"$ back as the unmeasured one-slot contexts:
+  // $
+  //   U((X_i, p_i)_(i <= n)) := V X_1 times dots.c times V X_n, quad quad
+  //   iota(X) := (X, oo),
+  // $
+
+  // #align(center, commutative-diagram(
+  //   node((0, 0), $"QBS"$),
+  //   node((0, 1), $"Ctx"$),
+  //   node((1, 1), $"QBS"$),
+  //   arr((0, 0), (0, 1), $iota$, "inj"),
+  //   arr((0, 1), (1, 1), $U$),
+  //   arr((0, 0), (1, 1), $"id"$, label-pos: right),
+  // ))
+
+  // so $U compose iota = "id"_("QBS")$, and $U$ lands in a cartesian closed
+  // category while $"Ctx"$ itself is not even cartesian.
+]
+
+#definition([Underlying-space functor])[
+  We can retrieve the underlying space of a context by a functor
+  $U : "Ctx" -> "QBS"$ and come back by $iota : "QBS" -> "Ctx"$ are given by
+  - $U((X_i, p_i)_(i <= n)) := V X_1 times dots.c times V X_n$
+  - $U(rho, f) := f_1 times dots.c times f_m$
+  - $iota(X) := (X, oo)$
+  - $iota(g) := ("id"_([bb(1)]), (g)),$
+  Thus $U$ discards *both*
+  grades and measures, and $iota$ is the full and faithful embedding of $"QBS"$
+  as the unmeasured one-slot contexts, corestricting to an equivalence
+  $"QBS" tilde.equiv "Ctx"_oo$.
+
+  #align(center, commutative-diagram(
+    node((0, 0), $"QBS"$),
+    node((0, 1), $"Ctx"$),
+    node((1, 1), $"QBS"$),
+    arr((0, 0), (0, 1), $iota$, "inj"),
+    arr((0, 1), (1, 1), $U$),
+    arr((0, 0), (1, 1), $"id"_("QBS")$, label-pos: right),
+  ))
+
+  So $U compose iota = "id"_("QBS")$: $U$ is a retraction of $iota$, and it
+  lands in a cartesian closed category although $"Ctx"$ is not even cartesian.
+  Terms and predicates are interpreted over $U Gamma$.
+]
+
+*Semantics of context:*
+
+For $Gamma = (x_1 attach(:, br: p_1) T_1\, dots\, x_n attach(:, br: p_n) T_n)$, one slot per variable we interpret the context as object in the category $"Ctx"$ of graded contexts:
+$
+  sem(Gamma) := (sem(T_1), p_1) ; dots.c ; (sem(T_n), p_n),
+  quad quad
+  U sem(Gamma) = V sem(T_1) times dots.c times V sem(T_n),
+$ <eq:ctx>
+
+
+== Terms and computations
+
+We will define the logical connectors in the next section, but here we give the semantics of the basic term constructors. The interpretation of a term $Gamma tack t : A$ is a morphism in $"QBS"$:
+
+The interpretation $sem(Gamma tack -) : U sem(Gamma) -> sem(A)$ is defined by:
+
+#grid(
+  columns: (1fr, 1fr),
+  align: left,
+  row-gutter: 10pt,
+  $sem(x) = pi_i$, $sem(ast) = !$,
+  $sem(⟨ t, s ⟩) = ⟨ sem(t), sem(s) ⟩$, $sem(pi_i t) = pi_i compose sem(t)$,
+  $sem(lambda x : A. t) = cur (sem(Gamma\, x attach(:, br: oo) A tack t))$,
+  $sem(t space s) = ev compose ⟨ sem(t), sem(s) ⟩$,
+
+  $sem(ret t) = eta compose sem(t)$, $sem("let" x <- M "in" N) = sem(N)^dagger compose ⟨ "id", sem(M) ⟩$,
+  $sem(smp_cal(D)) = cal(D)$, $sem(nrm (M)) = "normalise"(sem(M))$,
+  $sem(t[s slash x]) = sem(t) compose ⟨ "id", sem(s) ⟩$,
+  $sem(Phi[psi slash u]) = sem(Phi) compose ⟨ "id", "cur"(sem(psi) compose pi_2 ) ⟩$,
+) <eq:term-sem>
+
+
+// TODO: define dagger , cur, etc.
+
+= HQLL Logic
+
+
+
+#definition([Integration operator])[
+  For $X in "QBS"$ the *integration operator* is
+  $
+    I_X : cal(P) X times Omega^X --> Omega, quad quad
+    I_X ([alpha, mu], space u) := integral_RR u(alpha(r)) space dif mu(r),
+  $
+  For $f : X -> Y$ we have $I_Y (cal(P)(f)(nu), space v) = I_X (nu, space v compose f)$
+
+  #align(center)[
+    #commutative-diagram(
+      node((0, 0), $cal(P) X times Omega^Y$),
+      node((0, 1), $cal(P) Y times Omega^Y$),
+      node((1, 0), $cal(P) X times Omega^X$),
+      node((1, 1), $Omega$),
+      arr((0, 0), (0, 1), $cal(P)(f) times "id"$),
+      arr((0, 1), (1, 1), $I_Y$),
+      arr((0, 0), (1, 0), $"id" times f^*$, label-pos: right),
+      arr((1, 0), (1, 1), $I_X$, label-pos: right),
+    )
+  ]
+]
+
+#v(5pt)
+#lemma([Integration Lemma])[
+  $I_X$ is a morphism of quasi-Borel spaces.
+  #proof[TODO]
+]
+
+#v(5pt)
+#definition([Soft quantifiers])[
+  For $p in (0, oo)$, writing $(-)^(plus.minus p)$ for post-composition with
+  $t |-> t^(plus.minus p)$ on $[0,oo]$:
+  $
+    hat(exists)^p (nu, u) := (I_X (nu, space u^p))^(1 slash p), quad quad
+    hat(forall)^p (nu, u) := (I_X (nu, space u^(-p)))^(-1 slash p),
+  $
+  both morphisms $cal(P) X times Omega^X -> Omega$, since $(-)^(plus.minus p)$
+  is Borel on $[0,oo]$ and $I_X$ is a morphism.
+
+  #align(center)[
+    #commutative-diagram(
+      node((0, 0), $cal(P) X times Omega^X$),
+      node((0, 1), $cal(P) X times Omega^X$),
+      node((1, 1), $Omega$),
+      node((1, 0), $Omega$),
+      arr((0, 0), (0, 1), $"id" times (-)^(-p)$),
+      arr((0, 1), (1, 1), $I_X$),
+      arr((1, 1), (1, 0), $(-)^(-1 slash p)$, label-pos: right),
+      arr((0, 0), (1, 0), $hat(forall)^p$, label-pos: right),
+    )]
+]
+
+#remark[
+  $I_X (nu, u)$ is the expectation $EE_(x tilde nu)[u(x)]$, and we write the
+  latter as sugar for the former $EE_(x tilde nu)[e] := I_X (nu, lambda x. e)$
+]
+
+
+== Operators semantics
+
+#grid(
+  columns: (1fr, 1fr),
+  align: center,
+  row-gutter: 10pt,
+  $sem(0) = 0$, $sem(1) = 1$,
+  $sem(oo) = oo$, $sem(psi ⊗ phi) = sem(psi) sem(phi)$,
+  $sem(psi ⊗^* phi) = sem(psi) sem(phi)$, $sem(psi multimap phi) = sem(phi) slash sem(psi)$,
+  $sem(psi^*) = 1 slash sem(psi)$, $sem(psi^p) = sem(psi)^p$,
+  $sem(psi ⊕^p phi) = (sem(psi)^p + sem(phi)^p)^(1 slash p)$,
+  $sem(psi ⊕^(-p) phi) = (sem(psi)^(-p) + sem(phi)^(-p))^(-1 slash p)$,
+
+  $sem(exists^p (x : A_omega). phi) = (I_X (sem(omega), sem(phi)^p))^(1 slash p)$,
+  $sem(forall^p (x : A_omega). phi) = (I_X (sem(omega), sem(phi)^(-p)))^(-1 slash p)$,
+) <eq:ops>
+
+Unwinding $I_X$:
+
+$
+  sem(forall^p (x : A_omega). phi)(g)
+  = (integral_RR sem(phi)(g, alpha(r))^(-p) dif mu(r))^(-1 slash p)
+  = integral^(-p)_(x in sem(A)) sem(phi)(g, x) dif omega,
+$ <eq:unwind>
+
+$
+  sem(forall^p (u : (Prd A)_pi). Phi)(g)
+  = integral^(-p)_(u in Omega^(sem(A))) sem(Phi)(g, u) dif pi.
+$ <eq:ho>
+
+
+
+
+== Sequent Calculus
+
+
+$ Gamma mid(|) Xi tack Theta quad quad $
+
+where:
+- $Gamma$ ctx of grade vector $P in sof^n$,
+- $Xi, Theta$ finite multisets of formulas in $Gamma$
+
+
+
+== Tripos semantics
+
+We need to define the Tripos construction on the category of quasi-Borel spaces.
+The main ingredient is the hyperdoctrine $LL : "Ctx"^op -> "Poset"$ hyperdoctrine to interpret the logic.
+We first define a partial order on predicates $Omega$.
+
+#theorem([*Poset* QBS(X, $infinity$)])[
+  Let $Omega = [0,oo]$ and $attach(lt.eq, br: Omega) := {(a,b) in Omega^2 : a <= b}$. For
+  $X in "QBS"$ define, for $phi, psi in Omega^X = "QBS"(X, Omega)$,
+  $
+    phi attach(lt.eq, br: X) psi quad :<==> quad ⟨phi, psi⟩ : X -> Omega times Omega
+    "factors through" attach(lt.eq, br: Omega) arrow.r.hook Omega times Omega.
+  $
+  Then:
+  - $attach(lt.eq, br: Omega) arrow.r.hook Omega times Omega$ is a subobject in $"QBS"$;
+  - $phi attach(lt.eq, br: X) psi$ iff $phi(x) <= psi(x)$ for every $x in X$, and the
+    factorisation is then unique;
+  - $(|Omega^X|, attach(lt.eq, br: X))$ is a *partial* order;
+  - for every $f : Y -> X$ in $"QBS"$, $(-) compose f$ is monotone, so
+    $Omega^((-))$ lifts to a functor $"QBS"^"op" -> "Poset"$.
+]
+
+#example($"Order in" Omega$)[
+  Take $X := RR$, so that $|Omega^RR| = "QBS"(RR, Omega)$ is the poset of Borel
+  maps $RR -> [0,oo]$. Let
+  $
+    phi := lambda x. space abs(x) quad
+    psi := lambda x. space abs(x) + 1 quad
+    "and" theta := lambda x. space 1.
+  $
+
+  - *Comparable.* $phi attach(lt.eq, br: RR) psi$: for every $x$, $⟨phi, psi⟩(x) = (abs(x), abs(x) + 1) in attach(lt.eq, br: Omega)$, so
+  $⟨phi,psi⟩$ factors through $attach(lt.eq, br: Omega) arrow.r.hook Omega times Omega$.
+
+  - *Incomparable.* $phi$ and $theta$: at $x = 0$ we get $(0,1) in attach(lt.eq, br: Omega)$, but at $x = 2$ we get $(2,1) in.not attach(lt.eq, br: Omega)$. Neither factorisation exists, so the order is *partial*, not total.
+
+  - *Antisymmetric.* $lambda x. abs(x)$ and $lambda x. sqrt(x^2)$ compare both ways, hence are equal as they are, being the same function. This is the step that uses well-pointedness.
+]
+
+== Tripos like semantics
+
+#definition([Tripos semantics??])[
+  We define the semantics of sequents $Gamma mid(|) Xi tack Theta$ as the functor
+  $
+    LL : "Ctx"^op -> "Poset" \
+    Gamma |-> (|Omega^(U sem(Gamma))|, attach(lt.eq, br: U sem(Gamma)))
+  $
+  and together with a natural bijection
+  $
+    "Obj"(LL X) ≊ "Ctx"(X, Omega)
+  $
+]
+
+#definition([Sequent semantics])[
+  The semantics of a sequent is a morphism in $"Poset"$:
+  $
+    sem(Gamma tack phi : Omega) := sem(phi) : U sem(Gamma) -> Omega
+  $
+
+  $
+    sem(Gamma mid(|) Xi tack Theta) in Omega :=
+    integral^(-P)_(arrow(z) in sem(Gamma))
+    ( (⨂_(gamma in Xi) gamma) multimap (⨂^*_(delta in Theta) delta) )(arrow(z))
+    dif omega_Gamma,
+  $ <eq:seq>
+
+  $
+    phi ⊑_P psi quad :=quad
+    mark(integral^(-p_1)_(z_1 in X_1) dots.c integral^(-p_n)_(z_n in X_n), tag: #<mix>)
+    (phi multimap psi)(arrow(z)) dif omega_n dots.c dif omega_1
+  $ <eq:ent>
+]
+
+
+
+= Examples
+
+
+Let $I := [0,1]$, $upsilon := [iota, "Unif"[0,1]] in Dst I$, so $I_upsilon "dom"$ and we define the predicate
+$phi := lambda x : I. space x$. The sequents:
+
+$
+  x attach(:, br: p) I_upsilon mid(|) diamond.small tack phi space x, quad
+  x attach(:, br: p) I_upsilon mid(|) phi space x tack phi space x times.o 2, quad
+$
+
+are interpreted as follows:
+
+$
+  sem((x attach(:, br: p) I_upsilon) mid(|) dot.c tack phi space x) & = integral^(-p)_(x in I) x dif upsilon = (1-p)^(1 slash p)
+  quad quad (0 "for" p >= 1), \
+  sem((x attach(:, br: p) I_upsilon) mid(|) phi space x tack phi space x ⊗ 2) & = integral^(-p)_(x in I) (x multimap 2 x) dif upsilon
+  = integral^(-p)_(x in I) 2 dif upsilon = 2.
+$ <eq:ex1a>
 
 
 
 #bibliography("bibliography.bib")
-
-
-
-

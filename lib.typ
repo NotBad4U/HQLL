@@ -121,7 +121,7 @@
       let current-page = counter(page).get().first()
       // for the first page, and if hide-lipics is false:
       // display the event, license, and publisher info in the footer
-      if current-page == 1 {
+      if current-page == 0 {
         if hide-lipics { return }
         set text(weight: "medium", size: 7.5pt, tracking: 0.45pt)
         set par(leading: 3pt, spacing: 3pt)
@@ -257,19 +257,19 @@
       })
     )
 
-    v(2.1mm)
+    // v(2.1mm)
 
-    grid(
-      columns: (7mm, auto, 1fr),
-      column-gutter: 1.6mm,
-      place(dy: 6.5pt, line(length: 100%, stroke: colors.linegray)),
-      text(11pt, font: fonts.sans, tracking: 0.01em, weight: "bold")[Abstract],
-      place(dy: 6.5pt, line(length: 100%, stroke: colors.linegray)),
-    )
+    // grid(
+    //   columns: (7mm, auto, 1fr),
+    //   column-gutter: 1.6mm,
+    //   place(dy: 6.5pt, line(length: 100%, stroke: colors.linegray)),
+    //   text(11pt, font: fonts.sans, tracking: 0.01em, weight: "bold")[Abstract],
+    //   place(dy: 6.5pt, line(length: 100%, stroke: colors.linegray)),
+    // )
 
-    v(3.1mm)
-    par(leading: 2.1mm, text(size: 9pt, abstract))
-    v(5mm)
+    // v(3.1mm)
+    // par(leading: 2.1mm, text(size: 9pt, abstract))
+    // v(5mm)
 
     // Other metadata
     {
@@ -295,7 +295,7 @@
           // ACM Classification
           lipics-metadata([2012 ACM Subject Classification], ccs-desc),
           // Keywords
-          lipics-metadata([Keywords and phrases], keywords),
+          lipics-metadata([], keywords),
           // Digital Object Identifier
           // lipics-metadata([Digital Object Identifier], link("https://doi.org/" + doi, doi)),
           // Category
