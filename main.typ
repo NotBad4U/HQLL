@@ -730,6 +730,8 @@ We first define a partial order on predicates $Omega$.
 = Examples
 
 
+
+#example([Propositional])[
 Let $I := [0,1]$, $upsilon := [iota, "Unif"[0,1]] in Dst I$, so $I_upsilon "dom"$ and we define the predicate
 $phi := lambda x : I. space x$. The sequents:
 
@@ -746,7 +748,96 @@ $
   sem((x attach(:, br: p) I_upsilon) mid(|) phi space x tack phi space x ⊗ 2) & = integral^(-p)_(x in I) (x multimap 2 x) dif upsilon
   = integral^(-p)_(x in I) 2 dif upsilon = 2.
 $ <eq:ex1a>
+]
 
+#example([Quantifying over predicates: $Prd^2 I$])[
+  Let $I := [0,1]$ with $dot.c tack.r upsilon : Dst I$ uniform, and
+  $phi := lambda x : I. space x$.
+
+  *A functional on predicates.* By $lambda$-abstracting the bound predicate,
+  $
+    "Avg"^p := lambda u : Prd I. space exists^p (x : I_upsilon). space u space x
+    quad : quad Prd^2 I,
+  $
+  whose denotation is a *point of a function space*,
+  $sem("Avg"^p) = cur (hat(exists)^p)(sem(upsilon)) in |Omega^(Omega^I)|$: the
+  soft quantifier, curried at its measure argument. Applying it is $ev$:
+  $
+    "Avg"^2 space phi = (integral_0^1 x^2 dif x)^(1 slash 2) = (1 slash 3)^(1 slash 2)
+      approx 0.577, quad quad
+    "Avg"^1 space phi = 1 slash 2.
+  $
+
+  *Quantifying over the predicate variable.* This needs a measure *on
+  $Prd I = Omega^I$*, which must be supplied. Take
+  $
+    kappa &:= lambda s : I. space lambda x : I. space abs(x - s) quad &: quad I -> Prd I, \
+    M &:= "let" s <- "sample"_upsilon "in" "return"(kappa space s) quad &: quad Dst (Prd I),
+  $
+  and put $pi := M$, so $sem(pi) = cal(P)(sem(kappa))(sem(upsilon)) in |cal(P)(Omega^I)|$
+  and $(Prd I)_pi$ is a domain type. Then
+  $
+    Psi := exists^2 (u : (Prd I)_pi). space "Avg"^2 space u quad : quad Omega
+  $
+  is a *closed* formula, and 
+  $
+    sem(Psi) = integral^2_(u in Omega^I) sem("Avg"^2 space u) dif sem(pi)
+      = (integral_0^1 Phi(s)^2 dif s)^(1 slash 2), quad
+    Phi(s) := "Avg"^2 (kappa space s) = (s^2 - s + 1 slash 3)^(1 slash 2),
+  $
+  giving $sem(Psi) = (1 slash 6)^(1 slash 2) approx 0.408$.
+]
+
+#remark[
+  The outer integral never runs over $Omega^I$. Since
+  $sem(pi) = [kappa compose iota, "Unif"]$, integrating against it *is*
+  integrating the seed $s$ over $[0,1]$ --- this is the definition of $I_X$ at
+  $X := Omega^I$. Nothing canonical selects $pi$: the two-point prior
+  $(delta_0 + delta_1) slash 2$ gives $(1 slash 3)^(1 slash 2) approx 0.577$
+  for the same $Psi$.
+]
+
+#example([Two variables, and why contexts are ordered])[
+  In $Gamma = (x attach(:, br: p) I_upsilon, space y attach(:, br: q) I_upsilon)$ take
+  $
+    phi := abs(x - y) quad "with" quad Gamma tack.r phi "prop", quad
+    sem(phi) : I times I -> Omega.
+  $
+  Nested quantification discharges the *rightmost* slot first, so
+  $exists^p (x). space exists^q (y). space phi$ means
+  $hat(exists)^p (upsilon, space lambda x. space hat(exists)^q (upsilon, space lambda y. space phi))$.
+
+  *Equal grades commute.* At $p = q = 2$, Fubini merges the two integrals:
+  $
+    exists^2 (x : I_upsilon). space exists^2 (y : I_upsilon). space abs(x-y)
+    = (integral_0^1 integral_0^1 (x-y)^2 dif x dif y)^(1 slash 2)
+    = (1 slash 6)^(1 slash 2) approx 0.408,
+  $
+  the same in either order.
+
+  *Different grades do not.* Take $p = 1$ (mean) and $q = oo$ (sup):
+  $
+    exists^1 (x : I_upsilon). space exists^oo (y : I_upsilon). space abs(x-y)
+      &= integral_0^1 space sup_y abs(x-y) dif x
+       = integral_0^1 max(x, 1-x) dif x = 3 slash 4, \
+    exists^oo (y : I_upsilon). space exists^1 (x : I_upsilon). space abs(x-y)
+      &= sup_y integral_0^1 abs(x-y) dif x
+       = sup_y (y^2 + (1-y)^2) slash 2 = 1 slash 2.
+  $
+  A mean of suprema is not a supremum of means: $3 slash 4 eq.not 1 slash 2$.
+  This is why $Gamma$ is an *ordered* list and why exchange is unavailable at
+  unequal grades.
+]
+
+#remark[
+  The two examples are the same computation. Because $pi$ is presented by
+  $kappa$, the higher-order $Psi$ of Example 1 unfolds to the first-order
+  double quantification
+  $exists^2 (s : I_upsilon). space exists^2 (x : I_upsilon). space abs(x - s)$
+  of Example 2 --- both $(1 slash 6)^(1 slash 2)$. Quantification over
+  predicates is genuinely higher-order in its *syntax*, but is computed on the
+  seed whenever the prior comes from a program.
+]
 
 
 #bibliography("bibliography.bib")
