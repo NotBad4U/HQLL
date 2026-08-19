@@ -361,7 +361,8 @@
   #v(0.7em)
 
   #align(center, text(size: .8em, fill: teal)[
-    $exists^p tack.l pi_X^* tack.l forall^p$ #h(1.5em) ($y$ not free in $Gamma$)
+    $(exists^p phi multimap psi) = forall^p (phi multimap pi_X^* psi)$ — $Omega$-enriched adjoints; \
+    order-adjoint only at $p = oo$ (ess sup/ess inf) #h(1.5em) ($y$ not free in $Gamma$)
   ])
 ]
 
@@ -619,7 +620,7 @@
   #align(center, stack(
     dir: ltr,
     spacing: 3em,
-    prooftree(rule(name: [(ASS)], $Δ | Ψ, φ ent(oo) φ$)),
+    prooftree(rule(name: [(ASS)], $Δ | φ ent(oo) φ$)),
     prooftree(rule(
       name: [(CUT)],
       $Δ | Ψ ent(p) φ$,
