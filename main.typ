@@ -162,9 +162,10 @@ $
 
 #v(1em)
 
-Arities:
-- $⊗, ⊗^*, multimap, ⊕^(plus.minus p) : Omega times Omega -> Omega$;
+Arities, by arity:
+- $0, 1, oo : Omega$ #h(0.4em) (nullary);
 - $(-)^*, (-)^p : Omega -> Omega$;
+- $⊗, ⊗^*, multimap, ⊕^(plus.minus p) : Omega times Omega -> Omega$;
 - $hat(forall)^p, hat(exists)^p : Dst A times Prd A -> Omega$.
 
 
@@ -275,7 +276,12 @@ $
   prooftree(rule(name: [P-Abs], $Gamma\, x coo A tack phi "prop"$, $Gamma tack lambda x : A. phi : Prd A$)),
   prooftree(rule(name: [P-App], $Gamma tack u : Prd A$, $Gamma tack t : A$, $Gamma tack u space t "prop"$)),
 
-  prooftree(rule(name: [Conn], $Gamma tack phi "prop"$, $Gamma tack psi "prop"$, $Gamma tack phi star psi "prop"$)),
+  prooftree(rule(
+    name: [Conn],
+    $c_Omega "of arity" n$,
+    $Gamma tack phi_i "prop" #h(0.3em) (i <= n)$,
+    $Gamma tack c_Omega (phi_1\, dots.c\, phi_n) "prop"$,
+  )),
   prooftree(rule(
     name: [Q-Int],
     $Gamma tack nu : Dst A$,
@@ -292,6 +298,17 @@ $
   $p < oo$,
   $Gamma tack forall^p (x : D). phi "prop"$,
 )))
+
+#rem[
+  Conn is indexed by the arity of the constant, so it covers the whole signature
+  $c_Omega$ at once. At $n = 0$ it types the *constants*: $Gamma tack 0 : Omega$,
+  $Gamma tack 1 : Omega$ and $Gamma tack oo : Omega$ in every well-formed
+  context, with no premise beyond $Gamma ctx$; at $n = 1$ the involution and the
+  powers $phi^*, phi^p$; at $n = 2$ the binary connectives. We keep the usual
+  infix and postfix notation ($phi ⊗ psi$, $phi^*$) as sugar for the official
+  applicative form $c_Omega (phi_1, dots.c, phi_n)$. Via Prop, every such term
+  is also a proposition, which is what the operator semantics below interprets.
+]
 
 #v(1em)
 
@@ -723,6 +740,15 @@ The interpretation $sem(Gamma tack -) : U sem(Gamma) -> sem(A)$ is defined by:
 
 
 == Operators semantics
+
+Each clause below interprets a proposition $Gamma tack phi "prop"$ as a
+morphism $U sem(Gamma) -> Omega$, and the operations on the right-hand sides act
+*pointwise*. In particular the three constants denote the corresponding
+*constant morphisms*, $sem(Gamma tack 0 : Omega) = lambda arrow(z). 0$ and
+likewise for $1$ and $oo$; we abbreviate these to $sem(0) = 0$ etc. Every
+right-hand side is a $"QBS"$ morphism $Omega times Omega -> Omega$ (resp.
+$Omega -> Omega$), so each fiber $Omega^X$ is closed under the whole signature
+and reindexing commutes with it strictly.
 
 #grid(
   columns: (1fr, 1fr),
