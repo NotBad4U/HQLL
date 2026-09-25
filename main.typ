@@ -31,9 +31,11 @@
 #let sem(x) = $lr(⟦ #x ⟧)$
 #let nm(x) = $lr(⌜ #x ⌝)$
 #let Prd = math.op("Pred")
-#let Dst = math.op("Dist")
+// Type of s-finite measures on A (formerly Dist A, the probability type).
+#let Dst = math.cal("T")
 #let Qbs = math.op("QBS")
 #let Meas = math.op("Meas")
+#let Sbs = math.op("Sbs")
 #let ev = math.op("ev")
 #let cur = math.op("cur")
 #let esssup = math.op("ess sup")
@@ -43,7 +45,17 @@
 #let qdom = math.op("q-dom")
 #let ret = math.op("return")
 #let smp = math.op("sample")
+#let scr = math.op("score")
 #let nrm = math.op("norm")
+#let Leb = math.op("Leb")
+// s-finite kernel arrow, absolute continuity, 0-∞-absolute continuity,
+// and the density action of [0,∞]-valued functions on measures.
+#let kto = math.class("relation", sym.arrow.r.squiggly)
+#let ac = math.class("relation", sym.lt.double)
+#let acinf = math.class("relation", math.attach(sym.lt.double, t: sym.infinity))
+#let act = math.class("binary", sym.triangle.stroked.r)
+// sequencing M ; N inside function calls (a bare ";" would split the arguments)
+#let seq = math.class("binary", ";")
 // Typing colons for context extensions: cartesian (∞) and probabilistic (p)
 #let coo = math.attach(sym.colon, br: sym.infinity)
 #let cp = math.attach(sym.colon, br: math.italic("p"))
@@ -104,16 +116,16 @@
   [$0$ / $oo$],
 )
 
-#rem[
-  The two corner conventions $0 ⊗ oo = 0$ and $0 ⊗^* oo = oo$ are forced, not ad hoc:
-  they are exactly what makes $multimap$ the residual of $⊗$ at every boundary
-  ($a ⊗ b <= c$ iff $b <= a multimap c$, e.g. $0 multimap 0 = oo$ needs
-  $oo ⊗^* 0 = oo$), what makes $(-)^*$ an involution with dualizing element $1$
-  (so $(Omega, ⊗, 1, (-)^*)$ is a *Girard quantale* and $⊗^*$ its "par"), and what
-  makes reflexivity of the graded entailment of @sec:quasitripos exact. Via $-log$,
-  $(Omega, <=, ⊗, 1)$ is isomorphic to the extended Lawvere quantale
-  $([-oo,+oo], >=, +, 0)$ @lawvere1973, with $(-)^*$ becoming negation.
-]
+// #rem[
+//   The two corner conventions $0 ⊗ oo = 0$ and $0 ⊗^* oo = oo$ are forced, not ad hoc:
+//   they are exactly what makes $multimap$ the residual of $⊗$ at every boundary
+//   ($a ⊗ b <= c$ iff $b <= a multimap c$, e.g. $0 multimap 0 = oo$ needs
+//   $oo ⊗^* 0 = oo$), what makes $(-)^*$ an involution with dualizing element $1$
+//   (so $(Omega, ⊗, 1, (-)^*)$ is a *Girard quantale* and $⊗^*$ its "par"), and what
+//   makes reflexivity of the graded entailment of @sec:quasitripos exact. Via $-log$,
+//   $(Omega, <=, ⊗, 1)$ is isomorphic to the extended Lawvere quantale
+//   $([-oo,+oo], >=, +, 0)$ @lawvere1973, with $(-)^*$ becoming negation.
+// ]
 
 *Grades* $sof = [0,oo]$.
 
@@ -140,10 +152,16 @@ $
 #v(1em)
 
 Formulas are the terms of type $Omega$.
-Regular type $A$ or $RR$ are interpreted as QBS without measure associated and
-$A_omega$ is interpreted as QBS with the measure $omega: "Dist" A$ associated.
+Regular types $A$ or $RR$ are interpreted as QBS without measure associated, and
+$A_omega$ is interpreted as a QBS with the *s-finite measure* $omega: Dst A$ associated.
+The measure is not required to be normalised: $omega$ may be a probability distribution,
+but also an unnormalised or infinite measure such as Lebesgue measure on $RR$ (an improper
+prior), or the unnormalised posterior computed by a program that uses $scr$. Following
+@staton2017commutative, s-finite measures are the smallest class of measures that contains
+the probability distributions and is closed under the constructs of the computational
+language ($"let"$, $smp$, $scr$); their basic theory is developed in @vakar2026sfinite.
 The sort separation between $A$ and $A_omega$  is what preserves cartesian closure i.e
-$A_omega -> B$, $"Dist" A_omega$ and $(A_omega)_omega'$ are not well-formed types , so no exponential of a measured object is ever demanded.
+$A_omega -> B$, $Dst A_omega$ and $(A_omega)_omega'$ are not well-formed types , so no exponential of a measured object is ever demanded.
 
 
 ===== Terms
@@ -154,7 +172,7 @@ $
             mid(|) c_Omega
             mid(|) hat(forall)^p (t\, s) mid(|) hat(exists)^p (t\, s) \
      M, N & ::= ret t mid(|) "let" x <- M "in" N
-            mid(|) smp_cal(D) \
+            mid(|) smp_mu mid(|) scr(t) mid(|) nrm (M) \
   c_Omega & ::= 0 mid(|) 1 mid(|) oo mid(|) ⊗
             mid(|) ⊗^* mid(|) multimap mid(|) (-)^*
             mid(|) ⊕^p mid(|) ⊕^(-p) mid(|) (-)^p
@@ -168,6 +186,14 @@ Arities, by arity:
 - $⊗, ⊗^*, multimap, ⊕^(plus.minus p) : Omega times Omega -> Omega$;
 - $hat(forall)^p, hat(exists)^p : Dst A times Prd A -> Omega$.
 
+The computation $smp_mu$ draws from a constant s-finite measure $mu$: a probability
+distribution, but also Lebesgue measure $Leb$ on $RR$ or counting measure $\#_NN$ on $NN$.
+The computation $scr(phi)$ is a *soft constraint*: it multiplies the weight of the current
+execution by the truth value of the formula $phi$. Since formulas already take values in
+$Omega = [0,oo]$, no coercion is needed: $Omega$ is exactly the type $Dst 1$ of s-finite
+measures on the unit type (@def:sfinite). We write $M ; N$ for $"let" x <- M "in" N$ with
+$x$ fresh.
+
 
 #definition[
   - $"Pred" A ≔ A -> Omega$
@@ -176,14 +202,14 @@ Arities, by arity:
   - $exists^p (x : A_omega). phi ≔ hat(exists)^p (omega\, lambda x : A. phi),$
 ]
 
-#rem[
-  Note the regrade in the sugar: Q-Bind types the bound variable $x cp A_omega$,
-  while the right-hand side $lambda$-abstracts it at $x coo A$. The two are
-  coherent because both are interpreted over the same underlying space
-  $sem(A)$ --- the grade and the measure of the discharged slot are consumed by
-  the quantifier, not by the $lambda$ --- but this deserves an explicit coherence
-  lemma.
-]
+// #rem[
+//   Note the regrade in the sugar: Q-Bind types the bound variable $x cp A_omega$,
+//   while the right-hand side $lambda$-abstracts it at $x coo A$. The two are
+//   coherent because both are interpreted over the same underlying space
+//   $sem(A)$ --- the grade and the measure of the discharged slot are consumed by
+//   the quantifier, not by the $lambda$ --- but this deserves an explicit coherence
+//   lemma.
+// ]
 
 
 *Conversion rules:*
@@ -200,7 +226,21 @@ Arities, by arity:
 
   $"let" x <- ret t "in" N ≡ N[t slash x]$, $lambda x : A. space (u space x) ≡ u quad (u : Prd A)$,
   $"let" x <- M "in" ret x ≡ M$, $hat(forall)^p (nu, u) = hat(forall)^p (nu', u) quad ("if" nu equiv nu')$,
+
+  $scr(1) ≡ ret ast$, $scr(phi) seq scr(psi) ≡ scr(phi ⊗ psi)$,
 )
+
+#v(4pt)
+
+$
+  "let" x <- M "in" "let" y <- N "in" P quad ≡ quad "let" y <- N "in" "let" x <- M "in" P
+  quad quad (x in.not "FV"(N), space y in.not "FV"(M))
+$
+
+The last equation is *commutativity*: the order of independent computations is
+immaterial. It is sound because the s-finite monad is commutative
+(@vakar2026sfinite[Thm. 19], @staton2017commutative), and it is the equation that fails for
+general (non s-finite) measures, where Fubini's theorem is unavailable.
 
 == Judgement
 
@@ -299,16 +339,16 @@ $
   $Gamma tack forall^p (x : D). phi "prop"$,
 )))
 
-#rem[
-  Conn is indexed by the arity of the constant, so it covers the whole signature
-  $c_Omega$ at once. At $n = 0$ it types the *constants*: $Gamma tack 0 : Omega$,
-  $Gamma tack 1 : Omega$ and $Gamma tack oo : Omega$ in every well-formed
-  context, with no premise beyond $Gamma ctx$; at $n = 1$ the involution and the
-  powers $phi^*, phi^p$; at $n = 2$ the binary connectives. We keep the usual
-  infix and postfix notation ($phi ⊗ psi$, $phi^*$) as sugar for the official
-  applicative form $c_Omega (phi_1, dots.c, phi_n)$. Via Prop, every such term
-  is also a proposition, which is what the operator semantics below interprets.
-]
+// #rem[
+//   Conn is indexed by the arity of the constant, so it covers the whole signature
+//   $c_Omega$ at once. At $n = 0$ it types the *constants*: $Gamma tack 0 : Omega$,
+//   $Gamma tack 1 : Omega$ and $Gamma tack oo : Omega$ in every well-formed
+//   context, with no premise beyond $Gamma ctx$; at $n = 1$ the involution and the
+//   powers $phi^*, phi^p$; at $n = 2$ the binary connectives. We keep the usual
+//   infix and postfix notation ($phi ⊗ psi$, $phi^*$) as sugar for the official
+//   applicative form $c_Omega (phi_1, dots.c, phi_n)$. Via Prop, every such term
+//   is also a proposition, which is what the operator semantics below interprets.
+// ]
 
 #v(1em)
 
@@ -317,27 +357,32 @@ $
 #v(1em)
 
 #grid(
-  columns: (1fr, 1fr),
+  columns: (1fr, 1fr, 1fr),
   gutter: 7pt,
   row-gutter: 10pt,
   prooftree(rule(name: [Ret], $Gamma tack t : A$, $Gamma tack ret t : Dst A$)),
-  prooftree(rule(name: [Smp], $cal(D) "std. Borel on" A$, $Gamma tack smp_cal(D) : Dst A$)),
+  prooftree(rule(name: [Smp], $mu "s-finite on" A$, $Gamma tack smp_mu : Dst A$)),
+  prooftree(rule(name: [Score], $Gamma tack phi : Omega$, $Gamma tack scr(phi) : Dst 1$)),
+)
+#v(6pt)
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 7pt,
+  prooftree(rule(name: [Nrm], $Gamma tack M : Dst A$, $Gamma tack nrm (M) : Dst A$)),
+  prooftree(rule(
+    name: [Let],
+    $Gamma tack M : Dst A$,
+    $Gamma\, x coo A tack N : Dst B$,
+    $Gamma tack "let" x <- M "in" N : Dst B$,
+  )),
 )
 
-#rem[
-  There is deliberately no normalisation construct: $Dst A$ is interpreted by the
-  *probability* monad $cal(P)$, on whose values normalisation is the identity, so a
-  $nrm$ rule would be vacuous. Conditioning requires moving to s-finite or
-  subprobability kernels with a partial $nrm$; we leave this extension to future
-  work.
-]
-#v(6pt)
-#align(center, prooftree(rule(
-  name: [Let],
-  $Gamma tack M : Dst A$,
-  $Gamma\, x coo A tack N : Dst B$,
-  $Gamma tack "let" x <- M "in" N : Dst B$,
-)))
+The side condition of Smp reads: $mu$ is an s-finite measure on the space denoted by $A$
+(a constant of the language, as in @staton2017commutative). The probability version
+deliberately had no normalisation construct, since normalisation is the identity on
+probability measures. Over s-finite measures $nrm$ is the (partial) operation that turns
+an unnormalised model such as $"let" x <- smp_mu "in" scr(phi space x) ; ret x$ into a
+posterior distribution (@def:normalise).
 
 
 = Semantics
@@ -349,42 +394,123 @@ $
   - QBS is cartesian closed: $M_(Y^X) = { alpha mid(|) "uncurry"(alpha) in "QBS"(RR times X, Y)}$
   - QBS is well pointed
   - $Sigma_(M_X) = { U mid(|) forall alpha in M_X dot alpha^(-1) U in Sigma_RR}$ is the induced 𝜎-algebra.
-  - The commutative monad  $"Dist" X = { [alpha, mu] mid(|) alpha in M_X, mu in "Prob"(RR) }$ modulo equal push-forward, with
-    $
-      integral_(X) f d[alpha, mu] = integral_(RR) f compose alpha d mu
-    $
+  - $M_X = Qbs(RR, X)$, and for a standard Borel space $X$ (regarded as a QBS with
+    $M_X = Meas(RR, X)$) one has $Qbs(X, Y) = Meas(X, Sigma_(M_Y))$
+    @vakar2026sfinite[Thm. 18].
 ]
 
-#definition("Probability measure")[
-  Write $G(RR)$ for the set of probability measures on $RR$ with the
-  $sigma$-algebra generated by the evaluations $nu |-> nu(B)$, $B$ Borel (the
-  Giry space). A probability measure on a QBS $X$ is a pair $(alpha, mu)$ with $alpha in M_X$ and $mu in G(RR)$, modulo equal push-forward. Then
-  - $|cal(P)(X)| = { (alpha, mu) "probability measure on" (X, M_X) } slash ~$
-  - $M_(cal(P)(X)) = { beta : RR -> cal(P)(X) mid(|) exists alpha in M_X, g in "Meas"(RR, G(RR)), forall r, beta(r) = (alpha, g(r)) }$
-  so that $cal(P)(X) = (|cal(P)(X)|, M_(cal(P)(X)))$ is a QBS. On morphisms
-  $f : X -> Y$ the action is $cal(P)(f)[alpha, mu] := [f compose alpha, mu]$.
-  ($cal(P)$ is the semantic incarnation of the monad written $"Dist"$ above.)
+Measures on a QBS are introduced through the *s-finite monad* $T$ of
+@scibior2018denotational, in the presentation of @vakar2026sfinite[§11]. Recall that a
+measure $mu$ on a measurable space is *s-finite* if it is a countable sum of finite
+measures, and that a kernel $k : X kto Y$ is s-finite if it is a countable sum of
+kernels $k_i$ with $sup_x k_i (x, Y) < oo$ @vakar2026sfinite[Def. 1]. S-finite kernels are
+closed under composition @staton2017commutative and contain the probability kernels,
+Lebesgue measure and counting measure on $NN$; counting measure on $RR$ is not s-finite.
+
+#definition([S-finite measures on a QBS: the monad $T$])[
+  Let $X in Qbs$ and let $Sbs$ denote the standard Borel spaces.
+  - A *(randomisable) s-finite measure* on $X$ is a triple $⟨W, mu, alpha⟩$ with
+    $W in Sbs$, $mu$ an s-finite measure on $W$ and $alpha in Qbs(W, X)$
+    @vakar2026sfinite[Def. 6]. It integrates every $f in Qbs(X, Omega)$ by
+    $
+      integral_X f dif ⟨W, mu, alpha⟩ := integral_W f(alpha(w)) space dif mu(w).
+    $
+  - Two triples are identified when they define the same integral operator on
+    $Qbs(X, Omega)$; equivalently @vakar2026sfinite[Thm. 20], when the push-forward
+    measures $alpha_* mu$ and $alpha'_* mu'$ on $Sigma_(M_X)$ coincide. The carrier
+    $|T X|$ is the set of classes $[W, mu, alpha]$.
+  - The random elements are the s-finite *kernels* into $X$:
+    $
+      M_(T X) := { r |-> [W, k(r, -), alpha(r, -)] mid(|) & W in Sbs, space k : RR kto W "an s-finite kernel", \
+      & alpha in Qbs(RR times W, X) }.
+    $
+  - $T$ is a *commutative* monad on $Qbs$, with unit and bind inherited from the
+    continuation monad $((-) => Omega) => Omega$ into which $T$ embeds by
+    $nu |-> integral_X (-) dif nu$ @vakar2026sfinite[Thm. 19].
+  - If $X in Sbs$, then $|T X|$ is the set of *all* s-finite measures on $X$, and for
+    $X, Y in Sbs$ the Kleisli hom $Qbs(X, T Y)$ is the set of all s-finite kernels
+    $X kto Y$ @vakar2026sfinite[Cor. 2]. In particular $T 1 = [0, oo] = Omega$.
+  - The probability monad $cal(P)$ of @qbs is the sub-monad of $T$ obtained by requiring
+    $mu$ to be a probability measure, so every object and construction of the probability
+    version is a special case of what follows. ($T$ is the semantic incarnation of the
+    type constructor written $Dst$ above.)
+] <def:sfinite>
+
+#lemma([One parameter line suffices])[
+  Every s-finite measure on $X$ has a representative on $W = RR$, and every random
+  element of $T X$ has a representative with a fixed random element of $X$:
+  $
+    |T X| &= { [alpha, mu] mid(|) alpha in M_X, space mu "s-finite on" RR } slash ~, \
+    M_(T X) &= { r |-> [alpha, k(r, -)] mid(|) alpha in M_X, space k : RR kto RR "an s-finite kernel" }.
+  $
+  #proof[
+    Every $W in Sbs$ is a measurable retract of $RR$ @vakar2026sfinite[Prop. 1]:
+    $W -->^f RR -->^g W$ with $g compose f = "id"_W$. Then
+    $[W, mu, alpha] = [RR, f_* mu, alpha compose g]$ because
+    $(alpha compose g)_* f_* mu = alpha_* (g compose f)_* mu = alpha_* mu$; here $f_* mu$
+    is s-finite as a push-forward of an s-finite measure @vakar2026sfinite[Thm. 1] and
+    $alpha compose g in Qbs(RR, X) = M_X$. For random elements apply the same retraction to
+    $k(r, -)$ pointwise, then absorb the $r$-dependence of $alpha(r, -)$ into the kernel
+    through a Borel isomorphism $phi : RR tilde.equiv RR times RR$:
+    $[alpha(r, -), k(r, -)] = [alpha compose phi, space (phi^(-1))_* (delta_r ⊗ k(r, -))]$,
+    where $r |-> delta_r ⊗ k(r, -)$ is an s-finite kernel $RR kto RR times RR$ by
+    @vakar2026sfinite[Thm. 5(3)].
+  ]
+]
+
+Henceforth we write $[alpha, mu]$ for elements of $T X$, exactly as in the probability
+version, with the single difference that $mu$ is an s-finite measure on $RR$ rather than
+a probability measure.
+
+#definition([Monad structure, strength and density action])[
+  In the representation $[alpha, mu]$:
+  - *Functor.* On morphisms $f : X -> Y$ the action is $T(f)[alpha, mu] := [f compose alpha, mu]$.
+  - *Unit* $eta_X (x) := [lambda r. x, space delta_0]$, the Dirac measure at $x$.
+  - *Kleisli extension.* For $f : X -> T Y$ the composite $f compose alpha in M_(T Y)$ has
+    the form $r |-> [beta, k(r, -)]$ by the previous lemma, and
+    $
+      f^dagger [alpha, mu] := [beta, space mu ; k], quad quad
+      (mu ; k)(V) := integral_RR k(r, V) space dif mu(r),
+    $
+    the composite of the s-finite kernels $mu : 1 kto RR$ and $k : RR kto RR$, which is
+    s-finite @vakar2026sfinite[Thm. 1]. Equivalently, $f^dagger$ is characterised on
+    integrals by $I_Y (f^dagger nu, v) = I_X (nu, space lambda x. I_Y (f x, v))$ for all
+    $v in Omega^Y$, with $I$ the integration operator of @def:integration.
+  - *Strength* $"st"_(X, Y)(x, [alpha, mu]) := [lambda r. (x, alpha(r)), space mu]$.
+  - *Density action.* For $nu = [alpha, mu] in T X$ and $u in Omega^X$,
+    $
+      nu act u := [alpha, space mu act (u compose alpha)], quad quad
+      (mu act g)(U) := integral_U g space dif mu,
+    $
+    an s-finite measure by @vakar2026sfinite[Thm. 5(3)]. It depends only on the class of
+    $nu$, since $(alpha)_* (mu act (u compose alpha)) = (alpha_* mu) act u$, and it
+    satisfies $(nu act u)(|X|) = I_X (nu, u)$. Scalar multiplication
+    $c dot nu := nu act (lambda x. c)$ for $c in [0, oo]$ (with $0 dot oo = 0$) is the
+    special case of a constant density.
 ]
 
 We now define the category of measured quasi-Borel spaces that will interpret our domain types.
 
 #definition($"Category QBS"_C$)[
   - Objects are $(|X|, M_X, omega_X)$, *measured quasi-Borel spaces*, written
-    $(X, omega)$, with a QBS structure $(|X|, M_X)$ and a measure
-    $omega_X in |cal(P)(X)|$.
+    $(X, omega)$, with a QBS structure $(|X|, M_X)$ and an s-finite measure
+    $omega_X in |T X|$. Objects whose measure is a probability distribution are the
+    measured spaces of the probability version; improper priors such as $(RR, Leb)$ and
+    unnormalised posteriors are now objects as well.
 
   - Morphisms $f : (X, omega) -> (Y, rho)$ are QBS morphisms $f : X -> Y$ of
     *finite compression*, $C(f) < oo$. Writing
-    $f_* omega := l_Y (cal(P)(f)(omega))$ for the induced measure on
-    $Sigma_(M_Y)$ (where $l_Y [alpha, mu] := alpha_* mu$), the *measure
+    $f_* omega := l_Y (T(f)(omega)) = (f compose alpha)_* mu$ for the induced s-finite
+    measure on $Sigma_(M_Y)$ (where $l_Y [alpha, mu] := alpha_* mu$), the *measure
     compression* of $f$ is
     $
       C(f) := ⋀ {B in [0,oo] mid(|) forall U in Sigma_(M_Y). space
-        (f_* omega)(U) <= B dot rho(U)},
+        (f_* omega)(U) <= B ⊗^* rho(U)},
     $
-    the least $B$ with $f_* omega <= B ⊗^* rho$. Equivalently
-    $f_* omega << rho$ with $(dif f_* omega) slash (dif rho)$ essentially
-    bounded by $C(f)$; and $C(f) = 1$ iff $f$ is measure-preserving.
+    the least $B$ with $f_* omega <= B ⊗^* rho$. One has $C(f) <= 1$ iff
+    $f_* omega <= rho$. When $omega$ and $rho$ are probability measures this forces
+    $f_* omega = rho$, so on probability objects $C(f) = 1$ iff $f$ is measure-preserving;
+    for unnormalised measures $f_* omega <= rho$ is a genuine inequality.
 
   - Identities and composition are those of $"QBS"$. This is well defined
     because $C("id"_X) = 1$ and $C$ is lax,
@@ -392,16 +518,71 @@ We now define the category of measured quasi-Borel spaces that will interpret ou
     so finite compression is closed under composition.
 ]
 
+#lemma([Compression, densities and $0$-$oo$-sets])[
+  Let $f : (X, omega) -> (Y, rho)$ be a QBS morphism with $C(f) < oo$, and let
+  $oo[rho]$ be the *top $0$-$oo$-set* of $rho$ @vakar2026sfinite[Thm. 8]: $rho$ is
+  $sigma$-finite on $Y without oo[rho]$ and takes only the values $0$ and $oo$ on
+  measurable subsets of $oo[rho]$ (for $sigma$-finite $rho$, in particular for
+  probability measures, $oo[rho]$ is null).
+  + $f_* omega ac rho$ (absolute continuity), but not necessarily
+    $f_* omega acinf rho$; hence a density $dif f_* omega slash dif rho$ need not exist
+    @vakar2026sfinite[Thm. 21]. For instance $"id" : (RR, cal(N)(0,1)) -> (RR, oo dot Leb)$
+    has $C("id") = 0$, but $cal(N)(0,1)$ has no density with respect to $oo dot Leb$.
+  + On $oo[rho]$ the compression condition reduces to absolute continuity: it is vacuous
+    on sets of infinite $rho$-measure and forces $f_* omega (V) = 0$ on $rho$-null $V$.
+  + On $Y without oo[rho]$ the restriction of $f_* omega$ has a measurable density $g$
+    with respect to $rho$ (Radon-Nikodým for s-finite measures,
+    @vakar2026sfinite[Thm. 10]; the $0$-$oo$ condition is vacuous for $sigma$-finite
+    $rho$), and
+    $
+      C(f) = esssup_rho { g(y) mid(|) y in Y without oo[rho] }.
+    $
+  So for $sigma$-finite $rho$ we recover the previous description of $C(f)$ as the
+  essential bound of the density, while the badly infinite part $oo[rho]$ of the target
+  measure is invisible to $C$.
+  #proof[
+    (1) If $rho(U) = 0$ then $f_* omega (U) <= C(f) ⊗^* 0 = 0$ as $C(f) < oo$. In the
+    example, $oo dot Leb$ takes only the values $0$ and $oo$, so $B = 0$ satisfies
+    $cal(N)(0,1)(U) <= 0 ⊗^* (oo dot Leb)(U)$ for every $U$; the absence of a density
+    is the counterexample of @vakar2026sfinite[Thm. 10]. (2) is immediate from
+    $B ⊗^* oo = oo$. (3) On the $sigma$-finite part, $integral_U g dif rho <= B ⊗^* rho(U)$
+    for all $U$ iff $g <= B$ $rho$-a.e., by testing on sets of finite $rho$-measure.
+  ]
+]
+
 #lemma([Monoidal product in $"QBS"_C$])[
   $
     (X, omega) ⊗ (Y, rho) := (X times Y, space omega ⊗ rho), quad quad
     I := (1, delta_ast),
   $
-  where $omega ⊗ rho$ is the product measure, available because $cal(P)$ is
-  commutative. The projections are morphisms with $C(pi_i) = 1$, since
-  $(pi_1)_* (omega ⊗ rho) = omega$ and $(pi_2)_* (omega ⊗ rho) = rho$; so is
-  $! : (X,omega) -> I$. Hence $⊗$ is *semicartesian monoidal*: unit terminal,
-  projections everywhere.
+  where for $omega = [alpha, mu]$ and $rho = [beta, mu']$ the product measure
+  $omega ⊗ rho := [alpha times beta, space mu ⊗ mu']$ is the double strength of the
+  commutative monad $T$ @vakar2026sfinite[Thm. 19]. Here $mu ⊗ mu'$ is the product of
+  s-finite measures on $RR^2$ defined by iterated integration; the order of integration is
+  immaterial by the limited Fubini theorem for s-finite kernels
+  (@staton2017commutative, @vakar2026sfinite[Thm. 4]):
+  $
+    (omega ⊗ rho)(W)
+      = integral_X omega(dif x) integral_Y rho(dif y) space chi_W (x, y)
+      = integral_Y rho(dif y) integral_X omega(dif x) space chi_W (x, y).
+  $
+  This is the product that interprets $"let" x <- M "in" "let" y <- N "in" ret ⟨x, y⟩$.
+  It may differ from the maximal (Carathéodory) product $omega ⊠ rho$
+  @vakar2026sfinite[Thm. 3]; we never use the latter.
+
+  The marginals of a product are scaled by the *mass* of the discarded factor,
+  $
+    (pi_1)_* (omega ⊗ rho) = rho(|Y|) dot omega, quad quad
+    (pi_2)_* (omega ⊗ rho) = omega(|X|) dot rho, quad quad
+    !_* omega = omega(|X|) dot delta_ast,
+  $
+  so $C(pi_1) = rho(|Y|)$ and $C(pi_2) = omega(|X|)$ (as soon as the retained factor has
+  a set of finite positive measure), and $C(!) = omega(|X|)$ for the unique map
+  $! : (X, omega) -> I$. Hence projections and $!$ are morphisms of $"QBS"_C$ exactly
+  when the discarded measure has *finite total mass*. The structure $⊗$ is symmetric
+  monoidal; it is *semicartesian* (unit terminal, projections everywhere) only on the full
+  subcategory $"QBS"_C^"fin"$ of finite measures, and on probability objects
+  $C(pi_i) = C(!) = 1$ as before.
 
   #align(center)[
     #commutative-diagram(
@@ -427,32 +608,17 @@ We now define the category of measured quasi-Borel spaces that will interpret ou
   Assume $Sigma_(M_X)$ is countably separated with measurable singletons
   (e.g. $X$ standard Borel). Then
   $Delta_X = ⟨"id", "id"⟩$ is a morphism of $"QBS"_C$ iff $omega$ is *purely
-  atomic* with atom masses bounded below, i.e. $omega = sum_i m_i delta_(a_i)$
-  with $inf_i m_i > 0$ (hence finitely many atoms), in which case
+  atomic* with its finite atom masses bounded below, i.e.
+  $omega = sum_i m_i delta_(a_i)$ with countably many atoms, $m_i in (0, oo]$, and
+  $inf {m_i mid(|) m_i < oo} > 0$, in which case
   $
-    C(Delta_X) = 1 slash min_i m_i.
+    C(Delta_X) = 1 slash inf {m_i mid(|) m_i < oo}
   $
-  In particular $Delta_X$ is never a morphism when $omega$ has an atomless part.
-
-  #rem[
-    The compression condition quantifies over *all* $U in Sigma_(M_(X times X))$,
-    and a measure inequality verified on the rectangles $A times B$ alone does not
-    extend to the generated $sigma$-algebra, so testing rectangles only
-    *lower-bounds* $C(Delta_X)$. The correct route: (lower bounds / necessity)
-    $(Delta_X)_* omega (A times A) = omega(A)$ against
-    $(omega ⊗ omega)(A times A) = omega(A)^2$ gives $C >= 1 slash omega(A)$; taking
-    $A$ a singleton atom, resp.\ subsets of the atomless part with
-    $omega(A) -> 0$, forces the stated characterisation. (Upper bound) for purely
-    atomic $omega$ and *any* $U$, with $m := min_i m_i$,
-    $
-      (Delta_X)_* omega (U)
-      = sum_(i : (a_i, a_i) in U) m_i
-      <= 1/m sum_(i : (a_i, a_i) in U) m_i^2
-      <= 1/m (omega ⊗ omega)(U),
-    $
-    since the singletons ${(a_i, a_i)} subset.eq U$ are disjoint of product measure
-    $m_i^2$; equality is attained at $U = {(a_j, a_j)}$ for the smallest atom $a_j$.
-  ]
+  (with $inf emptyset = oo$, so $C(Delta_X) = 0$ when every atom has infinite mass).
+  In particular $Delta_X$ is never a morphism when $omega$ has an atomless part, while
+  atoms of infinite mass, and more generally the top $0$-$oo$-set $oo[omega]$, impose no
+  constraint. For a probability measure the condition forces finitely many atoms and
+  reduces to $C(Delta_X) = 1 slash min_i m_i$.
 
   #align(center)[
     #commutative-diagram(
@@ -483,8 +649,8 @@ We define the semantics of types recursively as follows:
   columns: (1fr, 1fr, 1fr),
   align: center,
   row-gutter: 10pt,
-  $sem(1) = 1$, $sem(RR) = RR$, $sem(Omega) = [0,oo]$,
-  $sem(A times B) = sem(A) times sem(B)$, $sem(A -> B) = sem(B)^(sem(A))$, $sem(Dst A) = cal(P) sem(A)$,
+  $sem(1) = 1$, $sem(RR) = RR$, $sem(Omega) = [0,oo] = T 1$,
+  $sem(A times B) = sem(A) times sem(B)$, $sem(A -> B) = sem(B)^(sem(A))$, $sem(Dst A) = T sem(A)$,
   $sem(Prd A) = Omega^(sem(A))$,
 ) <eq:types>
 
@@ -495,6 +661,9 @@ $
   sem(A_omega) := (sem(A), sem(omega)) in Qbs_C, quad quad
   sem(D ⊗ E) := sem(D) times sem(E) "with" omega_D ⊗ omega_E, quad quad
 $ <eq:dom>
+
+where $sem(omega) in |T sem(A)|$ is the s-finite measure denoted by the closed
+computation $dot.c tack omega : Dst A$.
 
 == Contexts
 
@@ -605,8 +774,10 @@ The interpretation $sem(Gamma tack -) : U sem(Gamma) -> sem(A)$ is defined by:
   $sem(lambda x : A. t) = cur (sem(Gamma\, x attach(:, br: oo) A tack t))$,
   $sem(t space s) = ev compose ⟨ sem(t), sem(s) ⟩$,
 
-  $sem(ret t) = eta compose sem(t)$, $sem("let" x <- M "in" N) = sem(N)^dagger compose ⟨ "id", sem(M) ⟩$,
-  $sem(smp_cal(D)) = cal(D)$,
+  $sem(ret t) = eta compose sem(t)$,
+  $sem("let" x <- M "in" N) = sem(N)^dagger compose "st" compose ⟨ "id", sem(M) ⟩$,
+  $sem(smp_mu) = mu quad ("constant")$, $sem(scr(phi)) = sem(phi) quad (Omega = T 1)$,
+  $sem(nrm (M)) = "normalise" compose sem(M)$,
   $sem(t[s slash x]) = sem(t) compose ⟨ "id", sem(s) ⟩$,
   $sem(Phi[psi slash u]) = sem(Phi) compose ⟨ "id", cur (sem(psi)) ⟩$,
 ) <eq:term-sem>
@@ -618,7 +789,44 @@ The interpretation $sem(Gamma tack -) : U sem(Gamma) -> sem(A)$ is defined by:
   simpler clause $cur (sem(psi) compose pi_2)$ is the special case of $psi$ closed.
 ]
 
-// TODO: define dagger , cur, etc.
+// TODO: define cur, ev, etc.
+
+Here $"st"$ is the strength and $(-)^dagger$ the Kleisli extension of $T$, so that in
+kernel notation
+$
+  sem("let" x <- M "in" N)(g, V) = integral_(sem(A)) sem(M)(g, dif x) space sem(N)((g, x), V),
+$
+the composition of s-finite kernels of @staton2017commutative. The interpretation of
+$scr(phi)$ is the formula itself, read as a measure on the one-point space:
+$sem(scr(phi))(g) = sem(phi)(g) dot delta_ast$. Consequently
+$sem(scr(phi) seq M) = sem(phi) dot sem(M)$ and, for $u : Prd A$,
+$
+  sem("let" x <- M "in" scr(u space x) seq ret x) = sem(M) act sem(u),
+$
+the density action: scoring is reweighting.
+
+#definition([Normalisation])[
+  $"normalise" : T X -> T X$ is
+  $
+    "normalise"(nu) := cases(
+      nu slash nu(|X|) quad & "if" 0 < nu(|X|) < oo,
+      0 & "otherwise (the zero measure)."
+    )
+  $
+  It is a QBS morphism: on a random element $r |-> [alpha, k(r, -)]$ it returns
+  $r |-> [alpha, k(r, -) act c(r)]$ with $c(r) := 1 slash k(r, RR)$ on the measurable set
+  ${0 < k(r, RR) < oo}$ and $c(r) := 0$ elsewhere, which is an s-finite kernel by
+  @vakar2026sfinite[Thm. 5(3)]. On a probability measure it is the identity.
+] <def:normalise>
+
+#proposition([Computations are s-finite kernels])[
+  If all types in $Gamma$ and $A$ are first order (built from $1$, $RR$, $Omega$ and
+  $times$), then $U sem(Gamma)$ and $sem(A)$ are standard Borel and
+  $sem(Gamma tack M : Dst A) in Qbs(U sem(Gamma), T sem(A))$ is precisely an s-finite
+  kernel $U sem(Gamma) kto sem(A)$ @vakar2026sfinite[Cor. 2]. On this fragment the
+  semantics is that of @staton2017commutative; the monad $T$ extends it to higher types
+  and to the predicate types $Prd A$ over which the logic quantifies.
+]
 
 = HQLL Logic
 
@@ -627,86 +835,116 @@ The interpretation $sem(Gamma tack -) : U sem(Gamma) -> sem(A)$ is defined by:
 #definition([Integration operator])[
   For $X in "QBS"$ the *integration operator* is
   $
-    I_X : cal(P) X times Omega^X --> Omega, quad quad
+    I_X : T X times Omega^X --> Omega, quad quad
     I_X ([alpha, mu], space u) := integral_RR u(alpha(r)) space dif mu(r),
   $
-  For $f : X -> Y$ we have $I_Y (cal(P)(f)(nu), space v) = I_X (nu, space v compose f)$
+  the integral of @def:sfinite; it is well defined on classes because two representatives
+  with the same push-forward have the same integrals @vakar2026sfinite[Thm. 20]. Its
+  value may be $oo$. For $f : X -> Y$ we have $I_Y (T(f)(nu), space v) = I_X (nu, space v compose f)$
 
   #align(center)[
     #commutative-diagram(
-      node((0, 0), $cal(P) X times Omega^Y$),
-      node((0, 1), $cal(P) Y times Omega^Y$),
-      node((1, 0), $cal(P) X times Omega^X$),
+      node((0, 0), $T X times Omega^Y$),
+      node((0, 1), $T Y times Omega^Y$),
+      node((1, 0), $T X times Omega^X$),
       node((1, 1), $Omega$),
-      arr((0, 0), (0, 1), $cal(P)(f) times "id"$),
+      arr((0, 0), (0, 1), $T(f) times "id"$),
       arr((0, 1), (1, 1), $I_Y$),
       arr((0, 0), (1, 0), $"id" times f^*$, label-pos: right),
       arr((1, 0), (1, 1), $I_X$, label-pos: right),
     )
   ]
-]
+] <def:integration>
+
+// #v(5pt)
+// #lemma([Integration Lemma])[
+//   $I_X : cal(P) X times Omega^X -> Omega$ is well defined and a morphism of
+//   quasi-Borel spaces, and it satisfies the naturality law
+//   $I_Y (cal(P)(f)(nu), v) = I_X (nu, v compose f)$ for every $"QBS"$ morphism
+//   $f : X -> Y$.
+// ] <lem:integration>
+
+// #proof[
+//   *Step 1: well-definedness.* Every $u in Omega^X = "QBS"(X, Omega)$ is
+//   $Sigma_(M_X)$-measurable: for Borel $U subset.eq Omega$ and any $alpha in M_X$,
+//   $alpha^(-1)(u^(-1) U) = (u compose alpha)^(-1) U in Sigma_RR$ since
+//   $u compose alpha$ is Borel, so $u^(-1) U in Sigma_(M_X)$ by definition of the
+//   induced $sigma$-algebra. If $[alpha, mu] = [alpha', mu']$, i.e.
+//   $alpha_* mu = alpha'_* mu'$ on $Sigma_(M_X)$, then by the change-of-variables
+//   formula for pushforwards of $[0,oo]$-valued measurable maps,
+//   $
+//     integral_RR u(alpha(r)) dif mu(r)
+//     = integral_X u thin dif (alpha_* mu)
+//     = integral_X u thin dif (alpha'_* mu')
+//     = integral_RR u(alpha'(r)) dif mu'(r),
+//   $
+//   so $I_X (nu, u)$ does not depend on the representative of $nu$; the integral
+//   always exists in $[0,oo]$.
+
+//   *Step 2: reduction along a random element.* Let
+//   $gamma = ⟨gamma_1, gamma_2⟩ in M_(cal(P) X times Omega^X)$, so
+//   $gamma_1 in M_(cal(P) X)$ and $gamma_2 in M_(Omega^X)$. By the definition of
+//   $M_(cal(P)(X))$ there are $alpha in M_X$ and $g in Meas(RR, G(RR))$ with
+//   $gamma_1 (s) = (alpha, g(s))$ for all $s$; by cartesian closure,
+//   $h := "uncurry"(gamma_2) : RR times X -> Omega$ is a $"QBS"$ morphism. Hence
+//   $
+//     k := h compose ("id"_RR times alpha) : RR times RR -> [0, oo]
+//   $
+//   is a $"QBS"$ morphism between standard Borel spaces, i.e. a Borel map
+//   @qbs, and
+//   $
+//     (I_X compose gamma)(s)
+//     = integral_RR gamma_2 (s)(alpha(r)) dif g(s)(r)
+//     = integral_RR k(s, r) dif g(s)(r).
+//   $
+
+//   *Step 3: the parametric integral is Borel.* Define
+//   $J : RR times G(RR) -> [0,oo]$ by $J(s, nu) := integral_RR k(s,r) dif nu(r)$.
+//   For $k = bb(1)_B$ with $B in Sigma_(RR times RR)$, $J(s, nu) = nu(B_s)$ where
+//   $B_s$ is the section: the class of $B$ for which $(s, nu) |-> nu(B_s)$ is Borel
+//   contains the rectangles $B_1 times B_2$ (the map is
+//   $bb(1)_(B_1)(s) dot nu(B_2)$, Borel because evaluation
+//   $nu |-> nu(B_2)$ generates the $sigma$-algebra of $G(RR)$), and is a
+//   $lambda$-system by $sigma$-additivity and closure of Borel maps under pointwise
+//   limits; by the $pi$--$lambda$ theorem it contains all of
+//   $Sigma_(RR times RR)$. Linearity extends Borel-ness of $J$ to simple $k$, and
+//   monotone convergence to arbitrary Borel $k >= 0$ via simple approximations
+//   $k_n arrow.tr k$. Finally $s |-> (s, g(s))$ is Borel, so
+//   $I_X compose gamma = J compose ⟨"id", g⟩$ is Borel, i.e.
+//   $I_X compose gamma in M_Omega$. As $gamma$ was arbitrary, $I_X$ is a $"QBS"$
+//   morphism.
+
+//   *Naturality.* $cal(P)(f)[alpha, mu] = [f compose alpha, mu]$, so
+//   $I_Y (cal(P)(f)(nu), v) = integral_RR v(f(alpha(r))) dif mu(r)
+//   = I_X (nu, v compose f)$.
+// ]
 
 #v(5pt)
 #lemma([Integration Lemma])[
-  $I_X : cal(P) X times Omega^X -> Omega$ is well defined and a morphism of
-  quasi-Borel spaces, and it satisfies the naturality law
-  $I_Y (cal(P)(f)(nu), v) = I_X (nu, v compose f)$ for every $"QBS"$ morphism
-  $f : X -> Y$.
+  $I_X$ is a morphism of quasi-Borel spaces.
+  #proof[
+    A random element of $T X times Omega^X$ is a pair
+    $r |-> ([alpha, k(r, -)], space u(r, -))$ with $k : RR kto RR$ an s-finite kernel
+    and $u in Qbs(RR times X, Omega)$ (cartesian closure). Then
+    $
+      r |-> I_X ([alpha, k(r, -)], u(r, -)) = integral_RR u(r, alpha(r')) space k(r, dif r')
+      = (k act h)(r, RR),
+    $
+    where $h(r, r') := u(r, alpha(r'))$ is measurable on $RR^2$ because
+    $Qbs(RR^2, Omega) = Meas(RR^2, [0,oo])$.
+    By @vakar2026sfinite[Thm. 5(3)], $k act h$ is again an s-finite kernel, in particular
+    measurable in $r$; so the composite lies in $M_Omega$. Equivalently, $I_X$ is the
+    uncurrying of the embedding $T X arrow.r.hook Omega^(Omega^X)$ through which $T$
+    inherits its monad structure @vakar2026sfinite[Thm. 19].
+  ]
 ] <lem:integration>
 
-#proof[
-  *Step 1: well-definedness.* Every $u in Omega^X = "QBS"(X, Omega)$ is
-  $Sigma_(M_X)$-measurable: for Borel $U subset.eq Omega$ and any $alpha in M_X$,
-  $alpha^(-1)(u^(-1) U) = (u compose alpha)^(-1) U in Sigma_RR$ since
-  $u compose alpha$ is Borel, so $u^(-1) U in Sigma_(M_X)$ by definition of the
-  induced $sigma$-algebra. If $[alpha, mu] = [alpha', mu']$, i.e.
-  $alpha_* mu = alpha'_* mu'$ on $Sigma_(M_X)$, then by the change-of-variables
-  formula for pushforwards of $[0,oo]$-valued measurable maps,
-  $
-    integral_RR u(alpha(r)) dif mu(r)
-    = integral_X u thin dif (alpha_* mu)
-    = integral_X u thin dif (alpha'_* mu')
-    = integral_RR u(alpha'(r)) dif mu'(r),
-  $
-  so $I_X (nu, u)$ does not depend on the representative of $nu$; the integral
-  always exists in $[0,oo]$.
-
-  *Step 2: reduction along a random element.* Let
-  $gamma = ⟨gamma_1, gamma_2⟩ in M_(cal(P) X times Omega^X)$, so
-  $gamma_1 in M_(cal(P) X)$ and $gamma_2 in M_(Omega^X)$. By the definition of
-  $M_(cal(P)(X))$ there are $alpha in M_X$ and $g in Meas(RR, G(RR))$ with
-  $gamma_1 (s) = (alpha, g(s))$ for all $s$; by cartesian closure,
-  $h := "uncurry"(gamma_2) : RR times X -> Omega$ is a $"QBS"$ morphism. Hence
-  $
-    k := h compose ("id"_RR times alpha) : RR times RR -> [0, oo]
-  $
-  is a $"QBS"$ morphism between standard Borel spaces, i.e. a Borel map
-  @qbs, and
-  $
-    (I_X compose gamma)(s)
-    = integral_RR gamma_2 (s)(alpha(r)) dif g(s)(r)
-    = integral_RR k(s, r) dif g(s)(r).
-  $
-
-  *Step 3: the parametric integral is Borel.* Define
-  $J : RR times G(RR) -> [0,oo]$ by $J(s, nu) := integral_RR k(s,r) dif nu(r)$.
-  For $k = bb(1)_B$ with $B in Sigma_(RR times RR)$, $J(s, nu) = nu(B_s)$ where
-  $B_s$ is the section: the class of $B$ for which $(s, nu) |-> nu(B_s)$ is Borel
-  contains the rectangles $B_1 times B_2$ (the map is
-  $bb(1)_(B_1)(s) dot nu(B_2)$, Borel because evaluation
-  $nu |-> nu(B_2)$ generates the $sigma$-algebra of $G(RR)$), and is a
-  $lambda$-system by $sigma$-additivity and closure of Borel maps under pointwise
-  limits; by the $pi$--$lambda$ theorem it contains all of
-  $Sigma_(RR times RR)$. Linearity extends Borel-ness of $J$ to simple $k$, and
-  monotone convergence to arbitrary Borel $k >= 0$ via simple approximations
-  $k_n arrow.tr k$. Finally $s |-> (s, g(s))$ is Borel, so
-  $I_X compose gamma = J compose ⟨"id", g⟩$ is Borel, i.e.
-  $I_X compose gamma in M_Omega$. As $gamma$ was arbitrary, $I_X$ is a $"QBS"$
-  morphism.
-
-  *Naturality.* $cal(P)(f)[alpha, mu] = [f compose alpha, mu]$, so
-  $I_Y (cal(P)(f)(nu), v) = integral_RR v(f(alpha(r))) dif mu(r)
-  = I_X (nu, v compose f)$.
+#remark[
+  The integration operator is definable in the computational language: by the density
+  action, $I_X (nu, u) = (nu act u)(|X|) = sem("let" x <- nu "in" scr(u space x))$, an
+  element of $T 1 = Omega$. So quantifying is running a program: the soft quantifiers
+  below are $hat(exists)^p (nu, u) = ("let" x <- nu "in" scr((u space x)^p))^(1 slash p)$
+  and dually for $hat(forall)^p$.
 ]
 
 #v(5pt)
@@ -717,13 +955,17 @@ The interpretation $sem(Gamma tack -) : U sem(Gamma) -> sem(A)$ is defined by:
     hat(exists)^p (nu, u) := (I_X (nu, space u^p))^(1 slash p), quad quad
     hat(forall)^p (nu, u) := (I_X (nu, space u^(-p)))^(-1 slash p),
   $
-  both morphisms $cal(P) X times Omega^X -> Omega$, since $(-)^(plus.minus p)$
-  is Borel on $[0,oo]$ and $I_X$ is a morphism.
+  both morphisms $T X times Omega^X -> Omega$, since $(-)^(plus.minus p)$
+  is Borel on $[0,oo]$ and $I_X$ is a morphism. With the conventions
+  $hat(exists)^oo (nu, u) := esssup_nu u$ and $hat(forall)^oo (nu, u) := essinf_nu u$,
+  the definitions make sense for every s-finite $nu$: they are the $L^p (nu)$ norm of
+  $u$ and the reciprocal $L^p (nu)$ norm of $u^*$, and are means only when $nu$ is a
+  probability measure.
 
   #align(center)[
     #commutative-diagram(
-      node((0, 0), $cal(P) X times Omega^X$),
-      node((0, 1), $cal(P) X times Omega^X$),
+      node((0, 0), $T X times Omega^X$),
+      node((0, 1), $T X times Omega^X$),
       node((1, 1), $Omega$),
       node((1, 0), $Omega$),
       arr((0, 0), (0, 1), $"id" times (-)^(-p)$),
@@ -734,8 +976,58 @@ The interpretation $sem(Gamma tack -) : U sem(Gamma) -> sem(A)$ is defined by:
 ]
 
 #remark[
-  $I_X (nu, u)$ is the expectation $EE_(x tilde nu)[u(x)]$, and we write the
-  latter as sugar for the former $EE_(x tilde nu)[e] := I_X (nu, lambda x. e)$
+  $I_X (nu, u)$ is the expectation $EE_(x tilde nu)[u(x)]$ when $nu$ is a probability
+  measure, and we write the latter as sugar for the former
+  $EE_(x tilde nu)[e] := I_X (nu, lambda x. e)$ in that case.
+]
+
+#lemma([Mass scaling])[
+  Let $nu in T X$ with $0 < nu(|X|) < oo$ and $overline(nu) := "normalise"(nu)$. For
+  $p in (0, oo)$,
+  $
+    hat(exists)^p (nu, u) = nu(|X|)^(1 slash p) ⊗ hat(exists)^p (overline(nu), u),
+    quad quad
+    hat(forall)^p (nu, u) = nu(|X|)^(-1 slash p) ⊗ hat(forall)^p (overline(nu), u).
+  $
+  In particular $hat(forall)^p (nu, 1) = nu(|X|)^(-1 slash p)$: the constant $1$ is no
+  longer a unit for $hat(forall)^p$ under an unnormalised measure, and
+  $hat(forall)^p (nu, 1) = 0$ when $nu(|X|) = oo$. At $p = oo$ the mass is invisible:
+  $hat(forall)^oo (nu, 1) = 1$ for every $nu eq.not 0$. Consequently the reflexivity of
+  graded entailment, $1 <= hat(forall)^p (omega, phi multimap phi) = omega(|A|)^(-1 slash p)$
+  for a slot $A_omega$ at grade $p < oo$, holds exactly over sub-probability domains
+  $omega(|A|) <= 1$; hard entailment ($p = oo$) is unaffected. A sequent calculus over
+  s-finite domains must therefore restrict soft grades to sub-probability slots, normalise
+  the slot ($A_(nrm omega)$), or record the masses $omega(|A|)$ in the grade.
+  #proof[
+    $integral u^(plus.minus p) dif nu = nu(|X|) integral u^(plus.minus p) dif overline(nu)$,
+    then take the $plus.minus 1 slash p$ power.
+  ]
+] <lem:mass>
+
+#example([Improper prior, scoring and normalisation])[
+  Let $Leb$ be Lebesgue measure on $RR$: an s-finite measure of infinite mass, so
+  $RR_Leb "dom"$ although $Leb$ is not a probability distribution. With the formula
+  $phi := lambda x : RR. space e^(-x^2 slash 2)$ form the program
+  $
+    M := "let" x <- smp_(Leb) "in" scr(phi space x) ; ret x quad : quad Dst RR,
+  $
+  whose denotation is the density action $sem(M) = Leb act sem(phi)$: the unnormalised
+  Gaussian, of total mass $sqrt(2 pi)$. Then $sem(nrm(M)) = cal(N)(0, 1)$, and all three of
+  $RR_Leb$, $RR_M$ and $RR_(nrm(M))$ are domain types. For $psi := lambda x : RR. abs(x)$
+  the same soft quantifier takes three different values:
+  $
+    exists^2 (x : RR_Leb). psi space x &= (integral_RR x^2 dif x)^(1 slash 2) = oo, \
+    exists^2 (x : RR_M). psi space x &= (integral_RR x^2 e^(-x^2 slash 2) dif x)^(1 slash 2)
+      = (sqrt(2 pi))^(1 slash 2) = (2 pi)^(1 slash 4) approx 1.583, \
+    exists^2 (x : RR_(nrm(M))). psi space x &= (EE_(x tilde cal(N)(0,1))[x^2])^(1 slash 2) = 1,
+  $
+  in accordance with @lem:mass: $(2 pi)^(1 slash 4) = (sqrt(2 pi))^(1 slash 2) dot 1$.
+  Dually, $forall^1 (x : RR_Leb). 1 = Leb(RR)^(-1) = 0$ while
+  $forall^1 (x : RR_M). 1 = (sqrt(2 pi))^(-1) approx 0.399$ and
+  $forall^1 (x : RR_(nrm(M))). 1 = 1$: under an improper prior nothing is universally
+  valid at a finite grade, and the mass of the posterior is what $nrm$ removes. None of
+  these domains is available in the probability version, where $smp_(Leb)$ and $scr$ are
+  not expressible.
 ]
 
 
@@ -765,7 +1057,7 @@ and reindexing commutes with it strictly.
   $sem(forall^p (x : A_omega). phi) = (I_X (sem(omega), sem(phi)^(-p)))^(-1 slash p)$,
 ) <eq:ops>
 
-Unwinding $I_X$:
+Unwinding $I_X$ with $sem(omega) = [alpha, mu]$, $mu$ s-finite on $RR$:
 
 $
   sem(forall^p (x : A_omega). phi)(g)
@@ -781,539 +1073,6 @@ $ <eq:ho>
 Dually, $integral^(p)$ (positive exponent) abbreviates the $hat(exists)^p$
 integral: $integral^(p)_(x in sem(A)) sem(phi)(g, x) dif omega =
 (integral sem(phi)(g, x)^p dif omega)^(1 slash p)$.
-
-
-
-
-= A graded quasi-tripos over QBS <sec:quasitripos>
-
-A tripos in the sense of Hyland--Johnstone--Pitts @hjp1980 @pitts2002 asks for a
-functor into $"Poset"$ with (i) Heyting-algebra fibers, (ii) left and right
-adjoints to reindexing along projections satisfying the Beck--Chevalley and
-Frobenius conditions, and (iii) a generic predicate. Our semantics *cannot* form
-a tripos: we record four obstructions in @rem:no-tripos, each structural rather
-than technical. What it does form is a precisely axiomatisable weakening, which
-we call a *graded quasi-tripos*: the fibers are Girard-quantale ordered rather
-than Heyting, the soft quantifiers are measure-indexed graded operators that are
-adjoint in an $Omega$-enriched sense (@prop:enriched-adj) and order-adjoint only
-at the limit grade $p = oo$, Beck--Chevalley holds laxly with a defect measured
-exactly by the compression grade, and the generic predicate --- the ingredient
-that makes the logic higher order --- survives on the nose.
-
-== The predicate functor
-
-We first define a partial order on predicates $Omega$.
-
-#theorem([*Poset* QBS(X, $Omega$)])[
-  Let $Omega = [0,oo]$ and $attach(lt.eq, br: Omega) := {(a,b) in Omega^2 : a <= b}$. For
-  $X in "QBS"$ define, for $phi, psi in Omega^X = "QBS"(X, Omega)$,
-  $
-    phi attach(lt.eq, br: X) psi quad :<==> quad ⟨phi, psi⟩ : X -> Omega times Omega
-    "factors through" attach(lt.eq, br: Omega) arrow.r.hook Omega times Omega.
-  $
-  Then:
-  - $attach(lt.eq, br: Omega) arrow.r.hook Omega times Omega$ is a subobject in $"QBS"$;
-  - $phi attach(lt.eq, br: X) psi$ iff $phi(x) <= psi(x)$ for every $x in X$, and the
-    factorisation is then unique;
-  - $(|Omega^X|, attach(lt.eq, br: X))$ is a *partial* order;
-  - for every $f : Y -> X$ in $"QBS"$, $(-) compose f$ is monotone, so
-    $Omega^((-))$ lifts to a functor $"QBS"^"op" -> "Poset"$.
-]
-
-#example($"Order in" Omega$)[
-  Take $X := RR$, so that $|Omega^RR| = "QBS"(RR, Omega)$ is the poset of Borel
-  maps $RR -> [0,oo]$. Let
-  $
-    phi := lambda x. space abs(x) quad
-    psi := lambda x. space abs(x) + 1 quad
-    "and" theta := lambda x. space 1.
-  $
-
-  - *Comparable.* $phi attach(lt.eq, br: RR) psi$: for every $x$, $⟨phi, psi⟩(x) = (abs(x), abs(x) + 1) in attach(lt.eq, br: Omega)$, so
-  $⟨phi,psi⟩$ factors through $attach(lt.eq, br: Omega) arrow.r.hook Omega times Omega$.
-
-  - *Incomparable.* $phi$ and $theta$: at $x = 0$ we get $(0,1) in attach(lt.eq, br: Omega)$, but at $x = 2$ we get $(2,1) in.not attach(lt.eq, br: Omega)$. Neither factorisation exists, so the order is *partial*, not total.
-
-  - *Antisymmetric.* $lambda x. abs(x)$ and $lambda x. sqrt(x^2)$ compare both ways, hence are equal as they are, being the same function. This is the step that uses concreteness of $"QBS"$: morphisms are plain functions, so mutual pointwise domination forces equality.
-]
-
-== The doctrine and its generic predicate
-
-The theorem above gives a functor $L : "QBS"^op -> "Poset"$ with
-$L(X) := (|Omega^X|, attach(lt.eq, br: X))$ and $L(f) := (-) compose f$. This ---
-and not a functor on $"Ctx"$ --- is the indexing of our predicates.
-
-#definition([Predicate doctrine])[
-  The *predicate doctrine* of HQLL is
-  $
-    LL := L compose U^"op" : "Ctx"^"op" -> "QBS"^"op" -> "Poset",
-    quad quad
-    LL(Gamma) = (|Omega^(U sem(Gamma))|, attach(lt.eq, br: U sem(Gamma))),
-  $
-  and the semantics of a proposition is a point of the fiber:
-  $sem(Gamma tack phi : Omega) := sem(phi) : U sem(Gamma) -> Omega$.
-  Predicates over $Gamma$ are reindexed along *arbitrary* $"QBS"$ morphisms
-  between the underlying spaces $U sem(Gamma)$; the category $"Ctx"$ contributes
-  only the bookkeeping of grades and measures, through $U$. In particular
-  substitution $sem(t[s slash x]) = sem(t) compose ⟨"id", sem(s)⟩$ is reindexing
-  along a $"QBS"$ morphism $U sem(Gamma) -> U sem(Gamma\, x coo A)$; no such
-  morphism exists in $"Ctx"$, whose maps are thinnings with slotwise components.
-]
-
-#proposition([Generic predicate])[
-  $sigma := "id"_Omega in L(Omega)$ is a generic predicate: for every $X$ and
-  every $phi in L(X)$,
-  $
-    phi = "id"_Omega compose phi = L(phi)(sigma),
-  $
-  with classifying map $[phi] := phi : X -> Omega$ itself (here $[phi] = phi$ is
-  in fact the *unique* classifying map, although the tripos definition does not
-  demand uniqueness). Consequently the doctrine is genuinely higher
-  order: $Prd A = Omega^(sem(A))$ is an object by cartesian closure of $"QBS"$,
-  $Prd^2 A$ makes sense, and Leibniz equality is expressible on the cartesian
-  fragment.
-]
-
-#remark([Why the doctrine is not indexed over $"Ctx"$])[
-  One might hope for a natural bijection
-  $"Obj"(LL Gamma) ≊ "Ctx"(Gamma, iota(Omega))$, exhibiting a generic predicate
-  inside $"Ctx"$ itself. This fails. Against $iota(Omega)$: a $"Ctx"$-morphism
-  factors through a single slot, so on $Gamma = ((RR, oo); (RR, oo))$ the joint
-  predicate $phi(x, y) = abs(x - y)$ is unrepresentable ($phi(0,0) = 0 != 1 =
-  phi(0,1)$ kills factoring through the first slot, $phi(0,1) = 1 != 0 = phi(1,1)$
-  through the second). Against an *arbitrary* candidate $Sigma$ --- note a
-  higher-order slot can recombine slots, e.g. $Sigma = ((Omega^RR, oo); (RR, oo))$
-  with $sigma = ev$ represents all binary predicates --- genericity still fails:
-  $"Ctx"(diamond.small, Sigma) = emptyset$ for every nonempty $Sigma$ (there is
-  no monotone injection $[k] -> [0]$) while $LL(diamond.small) ≅ Omega$ is a
-  continuum, and a context with more slots than $|Sigma|$ has genuinely joint
-  predicates depending on more slots than any thinning can select. Hence
-  predicates must be indexed over $"QBS"$, as above.
-]
-
-== Why there is no tripos
-
-#remark([The four obstructions])[
-  + *Soft quantifiers are not order-adjoint to weakening for $p < oo$.* The unit
-    law $phi <= pi^* hat(exists)^p phi$ fails on any spike: on $[0,1]$ with the
-    uniform measure and $p = 2$, $phi = bb(1)_([0, 1 slash 4])$ has
-    $hat(exists)^2 = 1 slash 2 < 1 = phi(1 slash 8)$; the counit fails dually for
-    $hat(forall)^p$. Worse, *no* graded Galois connection
-    $hat(exists)^p phi <= B ⊗ psi <==> phi <= G(psi)$ exists for any finite $B$:
-    the constant-norm spikes $phi_epsilon = epsilon^(-1 slash p)
-    bb(1)_([0, epsilon])$ (all with $hat(exists)^p phi_epsilon = 1 <= B ⊗ 1$)
-    force $G(1)(x) >= sup_(epsilon >= x) epsilon^(-1 slash p) = x^(-1 slash p)$,
-    whence $hat(exists)^p G(1) >= (integral_0^1 x^(-1) dif x)^(1 slash p) = oo$,
-    contradicting the biconditional at $phi = G(1)$, which bounds
-    $hat(exists)^p G(1)$ by $B ⊗ 1 < oo$. Averaging operators cannot extremise.
-  + *Even at $p = oo$, the pointwise order does not support adjoints.* For a
-    Borel $B subset.eq [0,1]^2$ whose projection $A$ is analytic but not Borel,
-    $sup_y bb(1)_B (x, y) = bb(1)_A (x)$ is not a morphism, and no least Borel
-    majorant exists. The genuine adjunction $esssup tack.l pi^* tack.l essinf$
-    holds only in the mixed order of @prop:enriched-adj (iii): measure-indexed
-    quantification is *forced* by $"QBS"$, not a design choice.
-  + *Fibers are Girard-quantale ordered, not Heyting.* $(Omega, ⊗, 1, (-)^*)$ is
-    a commutative Girard quantale, so the internal logic is classical *linear*
-    logic with graded quantifiers. The chain $[0, oo]$ does carry a min/max/$=>$
-    Heyting structure, but it is not the structure of our connectives
-    ($2 ⊗ 2 = 4 != min(2,2) = 2$; Heyting negation on a chain is
-    ${0, oo}$-valued and kills the involution $(-)^*$): a Heyting tripos over
-    these fibers would model the wrong logic.
-  + *No diagonals on measured slots.* By the diagonal lemma, $Delta$ exists in
-    $"QBS"_C$ only over purely atomic measures, so the tripos equality predicate
-    $exists_Delta (top)$ and contraction are unavailable --- by design: exchange
-    already fails at unequal grades (mean-of-sup $3 slash 4$ vs sup-of-mean
-    $1 slash 2$ in the two-variable example), and Leibniz equality survives on
-    the cartesian fragment.
-] <rem:no-tripos>
-
-== Quantifier calculus
-
-We write $hat(exists)^p_omega (u) := hat(exists)^p (omega, u)$ and
-$hat(forall)^p_omega (u) := hat(forall)^p (omega, u)$ when the measure matters,
-and drop $omega$ when it is clear.
-
-#lemma([Quantifier calculus])[
-  Let $(A, omega)$ be a measured slot with $omega$ a probability measure,
-  $pi : X times A -> X$ the projection, $phi, chi in Omega^(X times A)$,
-  $psi in Omega^X$, quantification acting on the $A$-slot. For all
-  $p, q in (0, oo]$:
-  + *(monotone retractions)* $hat(exists)^p, hat(forall)^p$ are monotone and
-    $hat(exists)^p (pi^* psi) = psi = hat(forall)^p (pi^* psi)$;
-  + *(one-way rules)* $phi <= pi^* psi ==> hat(exists)^p phi <= psi$, and
-    $pi^* psi <= phi ==> psi <= hat(forall)^p phi$;
-  + *(Frobenius, with the correct pairing)*
-    $hat(exists)^p (pi^* psi ⊗ phi) = psi ⊗ hat(exists)^p phi$ and
-    $hat(forall)^p (pi^* psi ⊗^* phi) = psi ⊗^* hat(forall)^p phi$, on the nose,
-    boundary values of $psi$ included; the cross pairings fail at
-    $psi in {0, oo}$;
-  + *(grade monotonicity)* for $q <= p$:
-    $hat(forall)^p phi <= hat(forall)^q phi <= hat(exists)^q phi <=
-    hat(exists)^p phi$, with $hat(exists)^p phi arrow.tr esssup_omega phi$ and
-    $hat(forall)^p phi arrow.br essinf_omega phi$ as $p -> oo$;
-  + *(Hölder)* $hat(exists)^(p ⊕^* q) (phi ⊗ chi) <= hat(exists)^p phi ⊗
-    hat(exists)^q chi$: the harmonic sum of the grade algebra is realised by the
-    Hölder conjugacy law;
-  + *(Markov)* for $t > 0$:
-    $omega{a mid(|) phi(x, a) > t ⊗ hat(exists)^p phi (x)} <= t^(-p)$
-    --- the sound quantitative residue of the instantiation axiom, which is
-    itself unsound by @rem:no-tripos (i).
-  The proofs are standard consequences of the power-mean and Hölder inequalities
-  and are omitted.
-] <lem:qcalc>
-
-#proposition([Soft quantifiers as $Omega$-enriched adjoints])[
-  In the setting of @lem:qcalc, for every $p in (0, oo)$, pointwise in $x in X$:
-  + $(hat(exists)^p phi multimap psi) = hat(forall)^p (phi multimap pi^* psi)$;
-  + $(psi multimap hat(forall)^p phi) = hat(forall)^p (pi^* psi multimap phi)$;
-  + at $p = oo$, in the *mixed order* (pointwise in $x$, $omega$-a.e. in the
-    quantified slot), $esssup_omega tack.l pi^* tack.l essinf_omega$ are genuine
-    adjoints, and both operators are $"QBS"$ morphisms.
-  Reading $multimap$ as the $Omega$-valued hom of the fiber and $hat(forall)^p$
-  as the graded aggregation of homs, (i)--(ii) say precisely that
-  $hat(exists)^p$ is left adjoint and $hat(forall)^p$ right adjoint to $pi^*$
-  *in the $Omega$-enriched sense*: the object of morphisms from
-  $hat(exists)^p phi$ to $psi$ equals the aggregated object of morphisms from
-  $phi$ to $pi^* psi$. The order-theoretic adjunction would be the image of
-  (i)--(ii) under "$1 <=$", and holds only at $p = oo$.
-] <prop:enriched-adj>
-
-#proof[
-  Fix $x in X$ and abbreviate $u := phi(x, -) in Omega^A$, $c := psi(x) in Omega$,
-  $M_p (u) := hat(exists)^p (omega, u) = (integral u^p dif omega)^(1 slash p)$,
-  $M_(-p)(u) := hat(forall)^p (omega, u) = (integral u^(-p) dif omega)^(-1 slash p)$.
-  Recall $a multimap b = a^* ⊗^* b$, so $0 multimap b = oo$,
-  $oo multimap b = 0$ for $b < oo$, and $a multimap oo = oo$ for every $a$.
-
-  *(i) $M_p (u) multimap c = M_(-p)(u multimap c)$.* By cases on $c$.
-
-  _Case $0 < c < oo$._ Pointwise $(u multimap c)^(-p) = u^p slash c^p$: at
-  interior $u$ this is arithmetic; at $u = 0$,
-  $(0 multimap c)^(-p) = oo^(-p) = 0 = 0 slash c^p$; at $u = oo$,
-  $(oo multimap c)^(-p) = 0^(-p) = oo = oo slash c^p$. Hence, with
-  $I := integral u^p dif omega in [0, oo]$,
-  $
-    M_(-p)(u multimap c) = (c^(-p) I)^(-1 slash p).
-  $
-  If $0 < I < oo$ this is $c slash I^(1 slash p) = M_p (u) multimap c$. If
-  $I = 0$ then $M_p (u) = 0$ and both sides are $oo$
-  ($0 multimap c = oo$; $(c^(-p) dot 0)^(-1 slash p) = 0^(-1 slash p) = oo$). If
-  $I = oo$ then $M_p (u) = oo$ and both sides are $0$
-  ($oo multimap c = 0$ as $c < oo$; $oo^(-1 slash p) = 0$).
-
-  _Case $c = oo$._ The left side is $M_p (u) multimap oo = oo$. Pointwise
-  $u multimap oo = oo$, so $(u multimap oo)^(-p) = 0$, and the right side is
-  $0^(-1 slash p) = oo$.
-
-  _Case $c = 0$._ The left side is $oo$ if $M_p (u) = 0$ and $0$ otherwise.
-  Pointwise $u multimap 0$ is $oo$ on ${u = 0}$ and $0$ on ${u > 0}$, so
-  $(u multimap 0)^(-p)$ is $0$ on ${u = 0}$ and $oo$ on ${u > 0}$; hence
-  $integral (u multimap 0)^(-p) dif omega = oo dot omega(u > 0)$ and the right
-  side is $oo$ if $omega(u > 0) = 0$ and $0$ otherwise. The two agree because
-  $M_p (u) = 0$ iff $u = 0$ $omega$-a.e.
-
-  *(ii) $c multimap M_(-p)(u) = M_(-p)(c multimap u)$.* By cases on $c$.
-
-  _Case $0 < c < oo$._ Pointwise $(c multimap u)^(-p) = c^p u^(-p)$ (at $u = 0$:
-  $(c multimap 0)^(-p) = 0^(-p) = oo = c^p dot oo$; at $u = oo$:
-  $oo^(-p) = 0 = c^p dot 0$). With $I := integral u^(-p) dif omega$,
-  $M_(-p)(c multimap u) = (c^p I)^(-1 slash p)$, which for $0 < I < oo$ equals
-  $I^(-1 slash p) slash c = c multimap M_(-p)(u)$; at $I = 0$ both sides are
-  $oo$, at $I = oo$ both sides are $0$ (using $0 < c < oo$).
-
-  _Case $c = 0$._ The left side is $0 multimap M_(-p)(u) = oo$. Pointwise
-  $0 multimap u = oo$ (including $u = 0$, by $oo ⊗^* 0 = oo$), so the right side
-  is $M_(-p)(oo) = oo$.
-
-  _Case $c = oo$._ The left side is $0$ if $M_(-p)(u) < oo$ and $oo$ if
-  $M_(-p)(u) = oo$. Pointwise $oo multimap u$ is $0$ on ${u < oo}$ and $oo$ on
-  ${u = oo}$, so $(oo multimap u)^(-p)$ is $oo$ on ${u < oo}$ and $0$ on
-  ${u = oo}$; the right side is therefore $oo$ if $omega(u < oo) = 0$ and $0$
-  otherwise, which agrees since $M_(-p)(u) = oo$ iff $u = oo$ $omega$-a.e.
-
-  *(iii)* For each fixed $x$, $esssup_omega phi(x, -) <= psi(x)$ iff
-  $phi(x, a) <= psi(x)$ for $omega$-almost-every $a$: this is the definition of
-  the essential supremum. Since the $x$-coordinate is compared pointwise, this
-  is exactly the adjunction $esssup_omega tack.l pi^*$ in the mixed order, and
-  dually $pi^* tack.l essinf_omega$. Morphism-hood: by @lem:qcalc (iv),
-  $M_p (phi(x, -)) arrow.tr esssup_omega phi(x, -)$ pointwise as $p -> oo$
-  through any sequence (the classical $L^p -> L^oo$ limit for probability
-  measures), each $M_p$ is a morphism by @lem:integration, and pointwise
-  limits of morphisms into $Omega$ are morphisms because Borel maps into
-  $[0, oo]$ are closed under pointwise limits; dually for $essinf_omega$.
-]
-
-#rem[
-  For $p < oo$, the identities (i)--(ii) are the *only* adjunction there is: by
-  @rem:no-tripos (i) no order-theoretic Galois connection, graded or not,
-  exists. The sequent rules for $exists^p$ and $forall^p$ remain sound because
-  they use only the one-way laws of @lem:qcalc (ii); instantiation axioms are
-  unsound, their quantitative residue being Markov's inequality
-  (@lem:qcalc (vi)).
-]
-
-#proposition([Substitution and graded Beck--Chevalley])[
-  Let $p in (0, oo]$.
-  + *(passive slots, strict)* for any $"QBS"$ morphism $f : X -> Y$, measured
-    slot $(A, nu)$ and $phi in Omega^(Y times A)$:
-    $hat(exists)^p_nu (phi compose (f times "id")) =
-    (hat(exists)^p_nu phi) compose f$, and likewise for $hat(forall)^p_nu$:
-    reindexing that does not touch the quantified slot commutes with
-    quantification on the nose.
-  + *(measure-preserving substitution, strict)* if $f : (X, omega) -> (Y, rho)$
-    has $C(f) = 1$ then $f_* omega = rho$ (both are probabilities), and for
-    every $u in Omega^Y$:
-    $hat(exists)^p_omega (u compose f) = hat(exists)^p_rho (u)$ and
-    $hat(forall)^p_omega (u compose f) = hat(forall)^p_rho (u)$, by the
-    naturality law of @lem:integration.
-  + *(graded lax Beck--Chevalley)* if $C(f) = B < oo$ then for every
-    $u in Omega^Y$
-    $
-      hat(exists)^p_omega (u compose f) <= B^(1 slash p) ⊗ hat(exists)^p_rho (u),
-      quad quad
-      hat(forall)^p_omega (u compose f) >= B^(-1 slash p) ⊗ hat(forall)^p_rho (u).
-    $
-    The constants $B^(plus.minus 1 slash p)$ are attained: for the inclusion
-    $([0, 1 slash B], B dot "Leb") arrow.r.hook ([0, 1], "Leb")$, take
-    $u = bb(1)_([0, 1 slash B])$ for the $hat(exists)$-constant and
-    $u' = bb(1)_([0, 1 slash B]) + oo dot bb(1)_((1 slash B, 1])$ for the
-    $hat(forall)$-constant (then $hat(forall)^p_rho (u') = B^(1 slash p)$ and
-    both sides equal $1$). No reverse inequalities hold, and the defect
-    vanishes as $p -> oo$: *the compression grade exactly measures the failure
-    of Beck--Chevalley*. Proof: extend $f_* omega <= B rho$ from sets to
-    integrals of nonnegative functions by simple approximation and monotone
-    convergence; omitted.
-] <prop:bc>
-
-#rem[
-  $log C(f)$ is the Rényi divergence of order $oo$, $D_oo (f_* omega || rho)$,
-  i.e. the max privacy-loss bound of differential privacy; @prop:bc (iii) is
-  the categorical form of the Rényi post-processing law @sato2019span.
-]
-
-== Sequent calculus and graded entailment
-
-$ Gamma mid(|) Xi tack Theta $
-
-where $Gamma$ is a context with grade vector $P in sof^n$ and $Xi, Theta$ are
-finite multisets of formulas in $Gamma$.
-
-#definition([Sequent semantics])[
-  For a slot $(X_i, p_i)$ of $sem(Gamma)$ and a predicate $v$ on (the
-  underlying space of) $X_i$, define
-  $
-    integral^(-p_i)_(z_i in X_i) v :=
-    cases(
-      hat(forall)^(p_i) (omega_i, v) & quad p_i < oo,
-      inf_(z_i) v(z_i) & quad p_i = oo,
-    )
-  $
-  *unmeasured slots are quantified by the plain infimum* --- grade-$oo$ validity
-  in the cartesian variables --- since they carry no measure to integrate
-  against. Then
-  $
-    sem(Gamma mid(|) Xi tack Theta) :=
-    integral^(-p_1)_(z_1 in X_1) dots.c integral^(-p_n)_(z_n in X_n)
-    ( (⨂_(gamma in Xi) sem(gamma)) multimap (⨂^*_(delta in Theta) sem(delta)) )(arrow(z)),
-  $ <eq:seq>
-  discharging slots from the rightmost (innermost) to the leftmost, and the
-  graded entailment between $phi, psi in LL(Gamma)$ is
-  $
-    phi ⊑_P psi :=
-    integral^(-p_1)_(z_1 in X_1) dots.c integral^(-p_n)_(z_n in X_n)
-    (phi multimap psi)(arrow(z)).
-  $ <eq:ent>
-  A sequent is *valid at grade $P$* when $1 <= sem(Gamma mid(|) Xi tack Theta)$.
-]
-
-#lemma([$Omega$-enriched graded structure])[
-  Graded entailment is *reflexive*, $1 <= (phi ⊑_P phi)$; on fully measured
-  contexts (all $p_i < oo$) equality holds iff $phi$ avoids ${0, oo}$ almost
-  everywhere (on grade-$oo$ slots the infimum needs only one interior witness
-  per section, so avoidance is sufficient but not necessary). It satisfies
-  *graded cut*
-  $
-    (phi ⊑_P psi) ⊗ (psi ⊑_Q chi) <= (phi ⊑_(P ⊕^* Q) chi),
-  $
-  with grade vectors composing by the slotwise harmonic sum; the grade
-  $P ⊕^* Q$ is *sharp* (no larger grade validates cut in general). Hence each
-  fiber is an $sof$-graded $Omega$-enriched category --- after $-log$, a graded
-  Lawvere generalized metric space @lawvere1973 --- of which the pointwise order
-  of the predicate functor is the $p = oo$ shadow. Proof by the reverse Hölder
-  inequality with conjugate exponents $p slash r, q slash r$; omitted.
-] <lem:cut>
-
-== The graded quasi-tripos
-
-We can now name the structure the semantics actually forms.
-
-#definition([Graded quasi-tripos])[
-  Let $sof = ([0, oo], ⊕^*, and)$ be the grade quantale and $Omega$ a
-  commutative Girard quantale. A *graded quasi-tripos* consists of:
-  + *(graded semicartesian base)* a semicartesian symmetric monoidal category
-    $(cal(B), ⊗, I)$ --- unit terminal, projections everywhere, diagonals *not*
-    required --- with a lax $sof$-grading on morphisms: $C("id") = 1$,
-    $C(g compose f) <= C(f) dot C(g)$ @ghl2021;
-  + *(fibers)* a functor $P : cal(B)^"op" -> "Poset"$ landing in partially
-    ordered $Omega$-modules carrying the monoidal-closed signature
-    $(⊗, ⊗^*, multimap, (-)^*, ⊕^(plus.minus p))$, with reindexing a strict
-    homomorphism for all of it;
-  + *(generic predicate)* an object $hat(Omega)$ with $sigma in P(hat(Omega))$
-    such that every $phi in P(X)$ equals $P([phi])(sigma)$ for some
-    $[phi] : X -> hat(Omega)$ --- here supplied by cartesian closure of the
-    ambient category ($"QBS"$), not of the base;
-  + *(graded quantifiers)* for each measured slot and grade $p in (0, oo]$,
-    monotone operators $hat(exists)^p, hat(forall)^p$ satisfying the quantifier
-    calculus of @lem:qcalc, the $Omega$-enriched adjunctions of
-    @prop:enriched-adj, order adjunction at $p = oo$, and Beck--Chevalley
-    strict on the $C = 1$ sub-base and lax with defect
-    $C(f)^(plus.minus 1 slash p)$ in general (@prop:bc);
-  + *(graded entailment)* an $Omega$-valued, $sof$-graded entailment on each
-    fiber with identity at grade $oo$, cut composing grades by $⊕^*$
-    (@lem:cut), and thinning acting by $and$.
-] <def:gqt>
-
-#theorem([HQLL forms a graded quasi-tripos])[
-  The data $("Ctx", C)$, $LL = L compose U^"op"$, $sigma = "id"_Omega$,
-  $(hat(exists)^p, hat(forall)^p)$ and $⊑_P$ satisfy @def:gqt, with
-  @lem:qcalc, @prop:enriched-adj, @prop:bc and @lem:cut supplying the axioms.
-]
-
-#remark([Relation to the tripos-to-topos construction])[
-  Applying the tripos-to-topos recipe to $LL$ yields the category of
-  $Omega$-valued partial equivalence relations (symmetric, $⊗$-transitive
-  $E in LL(X ⊗ X)$): after $-log$, measurable *partial-metric-like spaces* in
-  the sense of Lawvere generalized metric spaces @lawvere1973 @hohlekubiak2011.
-  Because $Omega$ is not idempotent, this category is symmetric monoidal closed
-  and semicartesian but *not* an elementary topos --- over a semicartesian
-  non-idempotent quantale the truth-value object collapses to the quantale
-  itself @tenoriomariano2022 --- and the rule of unique choice corresponds to
-  Cauchy completeness of the $Omega$-enriched objects @dagninopasquali-tac.
-  This justifies the name *quasi*-tripos. The closest existing notions are the
-  Lipschitz and quantitative doctrines of Dagnino--Pasquali
-  @dagninopasquali2022 @dagninopasquali2025 (substructural fibers, graded
-  structural rules, equality-as-distance, over a cartesian base) and the
-  monad-algebra predicate transformers of Kozen and Hasuo
-  @kozen1985 @hasuo2015: our $I_X$ is the Eilenberg--Moore expectation algebra
-  of $cal(P)$ on $Omega$, and the soft quantifiers are its conjugates by
-  $(-)^(plus.minus p)$; the compression grading instantiates divergence-graded
-  reasoning at $D_oo$ @sato2019span. None of the three contains the other two;
-  the graded quasi-tripos is their common generalization.
-]
-
-
-
-= Examples
-
-
-
-#example([Propositional])[
-Let $I := [0,1]$, $upsilon := [iota, "Unif"[0,1]] in Dst I$, so $I_upsilon "dom"$ and we define the predicate
-$phi := lambda x : I. space x$. The sequents:
-
-$
-  x attach(:, br: p) I_upsilon mid(|) diamond.small tack phi space x, quad
-  x attach(:, br: p) I_upsilon mid(|) phi space x tack phi space x times.o 2, quad
-$
-
-are interpreted as follows:
-
-$
-  sem((x attach(:, br: p) I_upsilon) mid(|) dot.c tack phi space x) & = integral^(-p)_(x in I) x dif upsilon = (1-p)^(1 slash p)
-  quad quad (0 "for" p >= 1), \
-  sem((x attach(:, br: p) I_upsilon) mid(|) phi space x tack phi space x ⊗ 2) & = integral^(-p)_(x in I) (x multimap 2 x) dif upsilon
-  = integral^(-p)_(x in I) 2 dif upsilon = 2.
-$ <eq:ex1a>
-]
-
-#example([Quantifying over predicates: $Prd^2 I$])[
-  Let $I := [0,1]$ with $dot.c tack.r upsilon : Dst I$ uniform, and
-  $phi := lambda x : I. space x$.
-
-  *A functional on predicates.* By $lambda$-abstracting the bound predicate,
-  $
-    "Avg"^p := lambda u : Prd I. space exists^p (x : I_upsilon). space u space x
-    quad : quad Prd^2 I,
-  $
-  whose denotation is a *point of a function space*,
-  $sem("Avg"^p) = cur (hat(exists)^p)(sem(upsilon)) in |Omega^(Omega^I)|$: the
-  soft quantifier, curried at its measure argument. Applying it is $ev$:
-  $
-    "Avg"^2 space phi = (integral_0^1 x^2 dif x)^(1 slash 2) = (1 slash 3)^(1 slash 2)
-      approx 0.577, quad quad
-    "Avg"^1 space phi = 1 slash 2.
-  $
-
-  *Quantifying over the predicate variable.* This needs a measure *on
-  $Prd I = Omega^I$*, which must be supplied. Take
-  $
-    kappa &:= lambda s : I. space lambda x : I. space abs(x - s) quad &: quad I -> Prd I, \
-    M &:= "let" s <- "sample"_upsilon "in" "return"(kappa space s) quad &: quad Dst (Prd I),
-  $
-  and put $pi := M$, so $sem(pi) = cal(P)(sem(kappa))(sem(upsilon)) in |cal(P)(Omega^I)|$
-  and $(Prd I)_pi$ is a domain type. Then
-  $
-    Psi := exists^2 (u : (Prd I)_pi). space "Avg"^2 space u quad : quad Omega
-  $
-  is a *closed* formula, and 
-  $
-    sem(Psi) = integral^2_(u in Omega^I) sem("Avg"^2 space u) dif sem(pi)
-      = (integral_0^1 Phi(s)^2 dif s)^(1 slash 2), quad
-    Phi(s) := "Avg"^2 (kappa space s) = (s^2 - s + 1 slash 3)^(1 slash 2),
-  $
-  giving $sem(Psi) = (1 slash 6)^(1 slash 2) approx 0.408$.
-]
-
-#remark[
-  The outer integral never runs over $Omega^I$. Since
-  $sem(pi) = [kappa compose iota, "Unif"]$, integrating against it *is*
-  integrating the seed $s$ over $[0,1]$ --- this is the definition of $I_X$ at
-  $X := Omega^I$. Nothing canonical selects $pi$: the two-point prior
-  $(delta_0 + delta_1) slash 2$ gives $(1 slash 3)^(1 slash 2) approx 0.577$
-  for the same $Psi$.
-]
-
-#example([Two variables, and why contexts are ordered])[
-  In $Gamma = (x attach(:, br: p) I_upsilon, space y attach(:, br: q) I_upsilon)$ take
-  $
-    phi := abs(x - y) quad "with" quad Gamma tack.r phi "prop", quad
-    sem(phi) : I times I -> Omega.
-  $
-  Nested quantification discharges the *rightmost* slot first, so
-  $exists^p (x). space exists^q (y). space phi$ means
-  $hat(exists)^p (upsilon, space lambda x. space hat(exists)^q (upsilon, space lambda y. space phi))$.
-
-  *Equal grades commute.* At $p = q = 2$, Fubini merges the two integrals:
-  $
-    exists^2 (x : I_upsilon). space exists^2 (y : I_upsilon). space abs(x-y)
-    = (integral_0^1 integral_0^1 (x-y)^2 dif x dif y)^(1 slash 2)
-    = (1 slash 6)^(1 slash 2) approx 0.408,
-  $
-  the same in either order.
-
-  *Different grades do not.* Take $p = 1$ (mean) and $q = oo$ (sup):
-  $
-    exists^1 (x : I_upsilon). space exists^oo (y : I_upsilon). space abs(x-y)
-      &= integral_0^1 space sup_y abs(x-y) dif x
-       = integral_0^1 max(x, 1-x) dif x = 3 slash 4, \
-    exists^oo (y : I_upsilon). space exists^1 (x : I_upsilon). space abs(x-y)
-      &= sup_y integral_0^1 abs(x-y) dif x
-       = sup_y (y^2 + (1-y)^2) slash 2 = 1 slash 2.
-  $
-  A mean of suprema is not a supremum of means: $3 slash 4 eq.not 1 slash 2$.
-  This is why $Gamma$ is an *ordered* list and why exchange is unavailable at
-  unequal grades.
-]
-
-#remark[
-  The two examples are the same computation. Because $pi$ is presented by
-  $kappa$, the higher-order $Psi$ of the $Prd^2 I$ example unfolds to the first-order
-  double quantification
-  $exists^2 (s : I_upsilon). space exists^2 (x : I_upsilon). space abs(x - s)$
-  of the two-variable example --- both $(1 slash 6)^(1 slash 2)$. Quantification over
-  predicates is genuinely higher-order in its *syntax*, but is computed on the
-  seed whenever the prior comes from a program.
-]
 
 
 #bibliography("bibliography.bib")
