@@ -3,6 +3,7 @@
 #import "@preview/showybox:2.0.4": showybox
 #import "@preview/curryst:0.6.0": prooftree, rule
 #import "@preview/commute:0.3.0": arr, commutative-diagram, node
+#import "@preview/equate:0.3.2": equate
 
 #let abstract = ""
 
@@ -25,6 +26,9 @@
 
 
 
+// Per-line numbering and labels in multi-line equations (used for D1--D7).
+#show: equate.with(breakable: true)
+
 // ---------------- notation ----------------
 #let sem(x) = $lr(⟦ #x ⟧)$
 #let Prd = math.op("Pred")
@@ -39,7 +43,7 @@
 #let essinf = math.op("ess inf")
 #let ret = math.op("return")
 #let smp = math.op("sample")
-#let scr = math.op("score")
+#let fct = math.op("factor")
 #let mss = math.op("mass")
 #let nrm = math.op("norm")
 #let bnd = math.op("bind")
@@ -115,75 +119,39 @@
   [primitive],
   [$a ⊗^* b = a b$ #h(1em) ($0 ⊗^* oo = oo$)],
   [$1$],
-  [defined (D2)],
+  [defined (@D2)],
   [$a multimap b = sup{c mid(|) a ⊗ c <= b} = a^* ⊗^* b$],
   [---],
-  [defined (D3)],
+  [defined (@D3)],
   [$a ⊕^p b = (a^p + b^p)^(1 slash p)$, #h(0.4em) $a ⊕^(-p) b = (a^(-p) + b^(-p))^(-1 slash p)$],
   [$0$ / $oo$],
-  [defined (D4, D5)],
+  [defined (@D4, @D5)],
 )
 
-The first four operations, together with the elements $0$ and $1$, are the primitive
-constants of the signature of @sec:sig; the remaining ones are *defined* from them in
-@sec:defs, in the way HOL defines its connectives from $=$, $supset$ and $epsilon$
-@gordonmelham1993. The algebraic theory of this structure --- a $*$-autonomous isomix
-monoidal poset whose additives come as a family indexed by a softness $p$ --- is worked out
-in @capucci2024quantifiers @capucci2026notes; we only use that every identity valid in it
-becomes an axiom of the logic (@sec:eqth).
-
-// #rem[
-//   The two corner conventions $0 ⊗ oo = 0$ and $0 ⊗^* oo = oo$ are forced, not ad hoc:
-//   they are exactly what makes $multimap$ the residual of $⊗$ at every boundary
-//   ($a ⊗ b <= c$ iff $b <= a multimap c$, e.g. $0 multimap 0 = oo$ needs
-//   $oo ⊗^* 0 = oo$), what makes $(-)^*$ an involution with dualizing element $1$
-//   (so $(Omega, ⊗, 1, (-)^*)$ is a *Girard quantale* and $⊗^*$ its "par"), and what
-//   makes reflexivity of the graded entailment of @sec:quasitripos exact. Via $-log$,
-//   $(Omega, <=, ⊗, 1)$ is isomorphic to the extended Lawvere quantale
-//   $([-oo,+oo], >=, +, 0)$ @lawvere1973, with $(-)^*$ becoming negation.
-// ]
 
 = Syntax
 
 We present HQLL in the style of Church's simple theory of types as mechanised in HOL
-@church1940 @gordonmelham1993: a simply typed $lambda$-calculus over a *signature* of typed
+@church1940 @gordonmelham1993: a simply typed $lambda$-calculus over a signature of typed
 constants, in which formulas are the terms of type $Omega$ and every logical operator,
-quantifiers included, is a constant applied to its arguments; binder notation is sugar. We
-follow @jacobsmelham1993 in making contexts explicit, written in the now-standard form
-$Gamma tack M : A$ @jacobs1999cltt @harrison2009hollight. Two things differ from HOL. There
-is no Hilbert choice operator $epsilon$. And the quantifiers are not defined from equality
-(nor from $epsilon$) but *computed*: they are $p$-means of the body against an s-finite
-measure, taken through an integration constant, following @capucci2024quantifiers
-@capucci2026notes.
+quantifiers included, is a constant applied to its arguments; binder notation is sugar.
 
 == Types
 
 $
   A, B ::= 1 mid(|) RR mid(|) Omega mid(|) A times B mid(|) A -> B mid(|) Dst A
-  quad quad quad quad
-  Prd A ≔ A -> Omega
 $
 
 The type constants are $1$, $RR$ and the type $Omega$ of truth values; the type operators
-are $times$, $->$ and the s-finite measure type $Dst$. In HOL the type constants are
-$"bool"$ and $"ind"$ and the only operator is $->$. Here $Omega$ plays the role of $"bool"$,
-and $RR$ that of $"ind"$: it is standard Borel, and the "one parameter line" lemma of
-@sec:prelim makes it the canonical sample space, so no axiom of infinity is needed. There
-are no type variables. Constants such as $integral_A$ or $ret_A$ are *families* indexed by
-types, and we omit the index whenever it is determined by the arguments, exactly as HOL
-instantiates the generic type of a polymorphic constant.
-
+are $times$, $->$ and the s-finite measure type $Dst$. The $Omega$ plays the role of $[0,infinity]$ i.e. Prop,
+and $RR$ that of individual: it is standard Borel.
 A term of type $Dst A$ denotes an s-finite measure on the space denoted by $A$. The measure
 is not required to be normalised: it may be a probability distribution, but also an
-unnormalised or infinite measure such as Lebesgue measure on $RR$ (an improper prior), or
-the unnormalised posterior computed by a program that uses $scr$. Following
-@staton2017commutative, s-finite measures are the smallest class of measures that contains
-the probability distributions and is closed under the constructs of the computational
-language ($"let"$, $smp$, $scr$); their basic theory is developed in @vakar2026sfinite. The
-measure enters the logic only as a *term* of type $Dst A$ --- the argument of a quantifier
---- and never as a decoration of a type. Hence cartesian closure needs no separation of
-sorts: $Dst A -> B$, $Dst (A -> B)$ and $Dst Dst A$ are all types, and a predicate on
-measures, or a measure on predicates, is nothing special.
+unnormalised or infinite measure such as Lebesgue measure on $RR$, or
+the unnormalised posterior computed by a program that uses $fct$. The
+measure enters the logic only as a term of type $Dst A$.
+
+#definition("Predicate")[The type of predicates on $A$ is defined by $Prd A ≔ A -> Omega$]
 
 == Terms and signature <sec:sig>
 
@@ -193,82 +161,76 @@ $
 $
 
 Terms are those of the simply typed $lambda$-calculus over the signature $Sig$ of
-@tab:sig, whose constants come in families indexed by types $A, B$, by a *softness*
-$p in (0, oo)$, by s-finite measures $mu$ and by Borel functions $f$. *Formulas* are the
-terms of type $Omega$ and *predicates* on $A$ the terms of type $Prd A$; there is no
-separate judgement for either.
+@tab:sig, whose constants come in families indexed by types $A, B$, by a softness
+$p in (0, oo)$, by s-finite measures $mu$ and by Borel functions $f$. Formulas are the
+terms of type $Omega$ and predicates on $A$ the terms of type $Prd A$.
 
 #figure(
   tb(
-    columns: (auto, auto, 1fr),
-    align: (left, left, left),
-    table.header([*group*], [*constant*], [*type*]),
-    table.cell(rowspan: 3)[unit, product],
+    columns: (auto, 1fr),
+    align: (left, left),
+    table.header([*constant*], [*type*]),
     [$ast$],
     [$1$],
-    [$pr_(A, B)$],
+    [$pr$],
     [$A -> B -> A times B$],
     [$pi_1$, #h(0.3em) $pi_2$],
     [$A times B -> A$, #h(0.3em) $A times B -> B$],
-    [truth values],
     [$0$, #h(0.3em) $1$],
     [$Omega$],
-    [multiplicative, additive],
     [$⊗$, #h(0.3em) $⊕$],
     [$Omega -> Omega -> Omega$],
-    table.cell(rowspan: 2)[duality, softening],
     [$(-)^*$],
     [$Omega -> Omega$],
     [$(-)^p$ #h(0.4em) ($p in (0, oo)$)],
     [$Omega -> Omega$],
-    [integration],
     [$integral_A$],
     [$Dst A -> (A -> Omega) -> Omega$],
-    [hard existential],
     [$exists^oo_A$],
     [$Dst A -> (A -> Omega) -> Omega$],
-    table.cell(rowspan: 2)[monad],
-    [$ret_A$],
+    [$ret$],
     [$A -> Dst A$],
-    [$bnd_(A, B)$],
+    [$bnd$],
     [$Dst A -> (A -> Dst B) -> Dst B$],
-    [measures],
     [$smp_mu$ #h(0.4em) ($mu$ s-finite on $sem(A)$)],
     [$Dst A$],
-    table.cell(rowspan: 3)[conditioning],
-    [$scr$],
+    [$fct$],
     [$Omega -> Dst 1$],
     [$mss$],
     [$Dst 1 -> Omega$],
-    [$nrm_A$],
+    [$nrm$],
     [$Dst A -> Dst A$],
-    table.cell(rowspan: 2)[arithmetic],
-    [$f$ #h(0.4em) (Borel $f : RR^n -> RR$)],
+    [Borel $f : RR^n -> RR$],
     [$RR -> dots.c -> RR$],
-    [$f$ #h(0.4em) (Borel $f : RR^n -> [0, oo]$)],
+    [Borel $f : RR^n -> [0, oo]$],
     [$RR -> dots.c -> Omega$],
   ),
-  caption: [The signature $Sig$ of HQLL. Every logical operator is a constant; the
-    quantifiers take the measure they average against as their first argument.],
+  caption: [The signature $Sig$ of HQLL],
 ) <tab:sig>
 
 The computation $smp_mu$ draws from a constant s-finite measure $mu$ on $sem(A)$: a
-probability distribution, but also Lebesgue measure $Leb$ on $RR$ or counting measure
-$\#_NN$ on $NN$ (a constant of the language, as in @staton2017commutative). The soft
-constraint $scr(phi)$ multiplies the weight of the current execution by the truth value of
-the formula $phi$; its inverse $mss$ reads a measure on the one-point type back as a truth
-value. Both are interpreted by the identity, since $Omega$ and $Dst 1$ denote the same
-space $[0, oo]$ (@def:sfinite); we nevertheless keep the two types apart, so that the
-logical fragment --- connectives, $integral$, $exists^oo$ --- can be read independently of
-the computational constants. Arithmetic constants make measurable functions available as
-terms, so that e.g. $lambda x : RR. space e^(-x^2 slash 2) : Prd RR$ is a predicate.
+probability distribution, but also Lebesgue measure $RR$).
+The $fct(phi)$ multiplies the weight of the current execution by the truth value of the formula $phi$;
+its inverse $mss$ reads a measure on the one-point type back as a truth value.
 
+#remark[
+  $Omega$ and $Dst 1$ denote the same space $[0, oo]$ (@def:sfinite)
+]
 == Typing
 
-Contexts $Gamma ::= diamond.small mid(|) Gamma, x : A$ are finite lists of distinct typed
-variables. The judgements are $Gamma tack M : A$, "$M$ is a well-typed term of type $A$ in
-context $Gamma$", and the equational judgement $Gamma tack M ≡ N : A$ of @sec:eqth. As in
-HOL there are exactly four typing rules:
+
+#definition("Context")[
+  Contexts $Gamma ::= diamond.small mid(|) Gamma, x : A$ are finite lists of distinct typed variables.
+]
+
+#definition("Judgement")[
+  The judgements are
+  $
+    Gamma tack M : A quad quad Gamma tack M ≡ N : A
+  $
+  $M$ is a well-typed term of type $A$ in context $Gamma$, and the other denote the equational judgement.
+]
+As in HOL there are exactly four typing rules:
 
 #grid(
   columns: (1fr, 1fr),
@@ -281,14 +243,31 @@ HOL there are exactly four typing rules:
   prooftree(rule(name: [App], $Gamma tack M : A -> B$, $Gamma tack N : A$, $Gamma tack M space N : B$)),
 )
 
-Types are unique: a term has at most one type in a given context. Everything that used to
-need a rule of its own --- pairing and projections, the connectives, the quantifiers,
-$"let"$, $smp$, $scr$ --- is now an instance of Con followed by App. For example, from
-$Gamma tack nu : Dst A$ and $Gamma, x : A tack phi : Omega$ one derives
-$Gamma tack integral_A space nu space (lambda x : A. space phi) : Omega$ by Con, Abs and two
-applications of App. There is no binding rule for quantifiers, no grade on the bound
-variable, and no well-formedness judgement for types or contexts: types are generated by
-the grammar and contexts are lists.
+#example[
+  #align(center, prooftree(rule(
+    name: [App],
+    rule(
+      name: [App],
+      rule(
+        name: [Con],
+        $(integral_A : Dst A -> (A -> Omega) -> Omega) in Sig$,
+        $Gamma tack integral_A : Dst A -> (A -> Omega) -> Omega$,
+      ),
+      $Gamma tack nu : Dst A$,
+      $Gamma tack integral_A space nu : (A -> Omega) -> Omega$,
+    ),
+    rule(
+      name: [Abs],
+      $Gamma\, x : A tack phi : Omega$,
+      $Gamma tack lambda x : A. space phi : A -> Omega$,
+    ),
+    $Gamma tack integral_A space nu space (lambda x : A. space phi) : Omega$,
+  )))
+
+  The term $integral_A space nu space (lambda x : A. space phi)$ sample $x$ from $nu$ and weight the outcome by the
+  truth value of $phi$.
+]
+
 
 == Definitions and notation <sec:defs>
 
@@ -299,21 +278,24 @@ $Sig$ with the displayed type, together with the equation $c ≡ M$ (@sec:eqth).
 $p in (0, oo)$ unless stated otherwise, and $lambda a b. space M$ abbreviates
 $lambda a. space lambda b. space M$.
 
-#defbox([Definitions])[
+#[
+  // D-numbering is local to this display; the rest of the paper stays unnumbered.
+  #set math.equation(numbering: n => "D" + str(n), supplement: none)
+  #counter(math.equation).update(0)
   $
-    "D1" quad & oo & ≔ 0^* & : Omega \
-    "D2" quad & ⊗^* & ≔ lambda a b. space (a^* ⊗ b^*)^* & : Omega -> Omega -> Omega \
-    "D3" quad & multimap & ≔ lambda a b. space (a ⊗ b^*)^* quad (= a^* ⊗^* b) & : Omega -> Omega -> Omega \
-    "D4" quad & ⊕^p & ≔ lambda a b. space (a^p ⊕ b^p)^(1 slash p) & : Omega -> Omega -> Omega \
-    "D5" quad & ⊕^(-p) & ≔ lambda a b. space (a^* ⊕^p b^*)^* & : Omega -> Omega -> Omega \
-    "D6" quad & exists^p_A & ≔ lambda nu u. space (integral_A space nu space (lambda x. space (u space x)^p))^(1 slash p) & : Dst A -> (A -> Omega) -> Omega \
-    "D7" quad & forall^p_A & ≔ lambda nu u. space (exists^p_A space nu space (lambda x. space (u space x)^*))^* & : Dst A -> (A -> Omega) -> Omega quad (p in (0, oo])
+    oo & ≔ 0^* && : Omega #<D1> \
+    ⊗^* & ≔ lambda a b. space (a^* ⊗ b^*)^* && : Omega -> Omega -> Omega #<D2> \
+    multimap & ≔ lambda a b. space (a ⊗ b^*)^* quad (= a^* ⊗^* b) && : Omega -> Omega -> Omega #<D3> \
+    ⊕^p & ≔ lambda a b. space (a^p ⊕ b^p)^(1 slash p) && : Omega -> Omega -> Omega #<D4> \
+    ⊕^(-p) & ≔ lambda a b. space (a^* ⊕^p b^*)^* && : Omega -> Omega -> Omega #<D5> \
+    exists^p_A & ≔ lambda nu u. space (integral_A space nu space (lambda x. space (u space x)^p))^(1 slash p) && : Dst A -> (A -> Omega) -> Omega #<D6> \
+    forall^p_A & ≔ lambda nu u. space (exists^p_A space nu space (lambda x. space (u space x)^*))^* && : Dst A -> (A -> Omega) -> Omega quad (p in (0, oo]) #<D7>
   $
 ]
 
 D3 is the place where HOL defines $exists P$ as $P (epsilon P)$. Here the existential is
-instead *computed*: D6 says that $exists^p_nu u$ is the $L^p (nu)$-norm of $u$, an
-arithmetic $p$-mean when $nu$ is a probability measure, and D7 makes $forall^p$ its De
+instead *computed*: @D6 says that $exists^p_nu u$ is the $L^p (nu)$-norm of $u$, an
+arithmetic $p$-mean when $nu$ is a probability measure, and @D7 makes $forall^p$ its De
 Morgan dual, the harmonic $p$-mean, exactly as in @capucci2024quantifiers. Both are
 definable from the single integration constant $integral_A$ because
 $(a^*)^p = (a^p)^* = a^(-p)$ and $(t^(1 slash p))^* = t^(-1 slash p)$ hold in $[0, oo]$,
@@ -321,7 +303,7 @@ including at the corners $0^* = oo$, $0^p = 0$, $oo^p = oo$; hence
 $forall^p_nu u = (integral u^(-p) dif nu)^(-1 slash p)$ (@lem:dendef). The hard existential
 $exists^oo$ (essential supremum) remains primitive: it is the limit of $exists^p$ only for
 measures of finite mass --- $exists^p_Leb 1 = oo$ for every $p < oo$ while
-$exists^oo_Leb 1 = 1$ --- so it is not a term in the other constants. D7 at $p = oo$ gives
+$exists^oo_Leb 1 = 1$ --- so it is not a term in the other constants. @D7 at $p = oo$ gives
 $forall^oo_nu u = (exists^oo_nu u^*)^*$, the essential infimum.
 
 *Notation.* We use the following abbreviations; each right-hand side is an official term.
@@ -390,10 +372,10 @@ immaterial. It is sound because the s-finite monad is commutative
 (@vakar2026sfinite[Thm. 19], @staton2017commutative), and it is the equation that fails for
 general (non s-finite) measures, where Fubini's theorem is unavailable.
 
-*Score and mass.*
+*Factor and mass.*
 $
-  scr(1) ≡ ret ast, quad quad scr(phi) seq scr(psi) ≡ scr(phi ⊗ psi), \
-  mss(scr(phi)) ≡ phi, quad quad scr(mss(m)) ≡ m .
+  fct(1) ≡ ret ast, quad quad fct(phi) seq fct(psi) ≡ fct(phi ⊗ psi), \
+  mss(fct(phi)) ≡ phi, quad quad fct(mss(m)) ≡ m .
 $
 
 *Truth-value identities.* For every identity $s = t$ between terms built from variables
@@ -412,7 +394,7 @@ not a two-element Boolean algebra.
 *Integration.* Where HOL has the axiom of choice for $epsilon$, we have three axioms for
 $integral$:
 $
-  ("∫-prog") quad & integral_(x tilde nu) phi ≡ mss("let" x <- nu "in" scr(phi)) \
+  ("∫-prog") quad & integral_(x tilde nu) phi ≡ mss("let" x <- nu "in" fct(phi)) \
    ("∫-lin") quad & integral_(x tilde nu) (phi ⊕ psi) ≡ integral_(x tilde nu) phi ⊕ integral_(x tilde nu) psi \
   ("∫-zero") quad & integral_(x tilde nu) 0 ≡ 0
 $
@@ -424,20 +406,20 @@ additivity of the integral, which no monad law provides. Everything else follows
   The following equations are derivable, with $x in.not "FV"(phi)$ in ∫-bind and
   $x in.not "FV"(psi)$ in ∫-hom:
   $
-      ("∫-ret") quad & integral_(x tilde ret M) phi ≡ phi[M slash x] \
-     ("∫-bind") quad & integral_(y tilde ("let" x <- M "in" N)) phi ≡ integral_(x tilde M) integral_(y tilde N) phi \
-    ("∫-score") quad & integral_(x tilde scr(psi)) phi ≡ psi ⊗ phi[ast slash x] \
-      ("∫-hom") quad & integral_(x tilde nu) (psi ⊗ phi) ≡ psi ⊗ integral_(x tilde nu) phi \
-     ("Fubini") quad & integral_(x tilde nu) integral_(y tilde rho) phi ≡ integral_(y tilde rho) integral_(x tilde nu) phi
+       ("∫-ret") quad & integral_(x tilde ret M) phi ≡ phi[M slash x] \
+      ("∫-bind") quad & integral_(y tilde ("let" x <- M "in" N)) phi ≡ integral_(x tilde M) integral_(y tilde N) phi \
+    ("∫-factor") quad & integral_(x tilde fct(psi)) phi ≡ psi ⊗ phi[ast slash x] \
+       ("∫-hom") quad & integral_(x tilde nu) (psi ⊗ phi) ≡ psi ⊗ integral_(x tilde nu) phi \
+      ("Fubini") quad & integral_(x tilde nu) integral_(y tilde rho) phi ≡ integral_(y tilde rho) integral_(x tilde nu) phi
   $
   #proof[
-    Unfold ∫-prog. For ∫-ret use the left unit law and $mss compose scr ≡ "id"$. For
+    Unfold ∫-prog. For ∫-ret use the left unit law and $mss compose fct ≡ "id"$. For
     ∫-bind, associativity moves the outer $"let"$ inside, and
-    $scr(phi) ≡ scr(mss("let" y <- N "in" scr(phi)))$ by $scr compose mss ≡ "id"$. For
-    ∫-score, $phi ≡ phi[ast slash x]$ since $x : 1$, then the score law and
-    $mss compose scr ≡ "id"$. For ∫-hom, $scr(psi ⊗ phi) ≡ scr(psi) seq scr(phi)$,
-    commutativity moves $scr(psi)$ out of the $"let"$ because $x in.not "FV"(psi)$, and
-    $scr(psi) seq m ≡ scr(psi ⊗ mss(m))$ by the score laws. Fubini is commutativity.
+    $fct(phi) ≡ fct(mss("let" y <- N "in" fct(phi)))$ by $fct compose mss ≡ "id"$. For
+    ∫-factor, $phi ≡ phi[ast slash x]$ since $x : 1$, then the factor law and
+    $mss compose fct ≡ "id"$. For ∫-hom, $fct(psi ⊗ phi) ≡ fct(psi) seq fct(phi)$,
+    commutativity moves $fct(psi)$ out of the $"let"$ because $x in.not "FV"(psi)$, and
+    $fct(psi) seq m ≡ fct(psi ⊗ mss(m))$ by the factor laws. Fubini is commutativity.
   ]
 ]
 
@@ -612,14 +594,14 @@ which curries the $A$-argument and keeps the free variables of $Gamma$.
   $
     sem("let" x <- M "in" N) = sem(N)^dagger compose "st" compose ⟨ "id", sem(M) ⟩,
   $
-  the strong-monad interpretation of $"let"$; moreover $sem(scr(phi) seq M) = sem(phi) dot sem(M)$
-  and, for $u : Prd A$, $sem("let" x <- M "in" scr(u space x) seq ret x) = sem(M) act sem(u)$.
+  the strong-monad interpretation of $"let"$; moreover $sem(fct(phi) seq M) = sem(phi) dot sem(M)$
+  and, for $u : Prd A$, $sem("let" x <- M "in" fct(u space x) seq ret x) = sem(M) act sem(u)$.
   #proof[
     $sem(bnd space M space (lambda x. N)) = ev^dagger compose "st"' compose ⟨ sem(M), cur sem(N) ⟩
     = (ev compose ("id" times cur sem(N)))^dagger compose "st"' compose ⟨ sem(M), "id" ⟩$ by
     naturality of the costrength, and $ev compose ("id" times cur sem(N)) = sem(N) compose "swap"$,
     with $"st"' = T("swap") compose "st" compose "swap"$. The remaining identities are the
-    density action of @def:sfinite: $sem(scr(phi))(g) = sem(phi)(g) dot delta_ast$, so
+    density action of @def:sfinite: $sem(fct(phi))(g) = sem(phi)(g) dot delta_ast$, so
     scoring is reweighting.
   ]
 ]
@@ -728,9 +710,9 @@ $nu$ denotes $0$: universal quantification over nothing is vacuously true, as it
   align: left,
   row-gutter: 8pt,
   $sem(ret) = eta$, $sem(bnd) = ev^dagger compose "st"'$, $sem(smp_mu) = mu in |T sem(A)|$,
-  $sem(scr) = sem(mss) = "id"_([0, oo])$, $sem(nrm) = "normalise"$, $sem(f) = f$,
+  $sem(fct) = sem(mss) = "id"_([0, oo])$, $sem(nrm) = "normalise"$, $sem(f) = f$,
 )
-using $sem(Omega) = T 1 = [0, oo]$ for $scr$ and $mss$, and the fact that Borel maps between
+using $sem(Omega) = T 1 = [0, oo]$ for $fct$ and $mss$, and the fact that Borel maps between
 standard Borel spaces are $"QBS"$ morphisms for $f$. The constants $ast$, $pr$, $pi_i$
 denote the cartesian structure of $"QBS"$.
 
@@ -802,11 +784,11 @@ denote the cartesian structure of $"QBS"$.
     - *Monad laws and commutativity*: $T$ is a commutative monad (@def:sfinite);
       commutativity is the limited Fubini theorem for s-finite kernels
       (@staton2017commutative, @vakar2026sfinite[Thm. 4]).
-    - *Score and mass*: $sem(scr) = sem(mss) = "id"$, and
-      $sem(scr(phi) seq scr(psi)) = sem(phi) sem(psi) dot delta_ast$ by the density action.
+    - *Factor and mass*:$sem(fct) = sem(mss) = "id"$, and
+      $sem(fct(phi) seq fct(psi)) = sem(phi) sem(psi) dot delta_ast$ by the density action.
     - *Truth-value identities*: the connectives are interpreted pointwise, so an identity
       valid at all points of $[0, oo]$ holds between the composites.
-    - *∫-prog*: $I_X (nu, u) = (nu act u)(|X|) = sem("let" x <- nu "in" scr(u space x))$,
+    - *∫-prog*: $I_X (nu, u) = (nu act u)(|X|) = sem("let" x <- nu "in" fct(u space x))$,
       the density action of @def:sfinite read as a measure on the one-point space, and
       $mss$ is the identity.
     - *∫-lin, ∫-zero*: the integral is additive and $integral 0 space dif nu = 0$.
@@ -866,14 +848,14 @@ denote the cartesian structure of $"QBS"$.
 == Quantifying is running a program
 
 By the axiom ∫-prog and its soundness, the integration operator is definable in the
-computational fragment: $I_X (nu, u) = (nu act u)(|X|) = sem("let" x <- nu "in" scr(u space x))$,
-an element of $T 1 = Omega$. Through D6 and D7 the soft quantifiers are therefore programs
+computational fragment: $I_X (nu, u) = (nu act u)(|X|) = sem("let" x <- nu "in" fct(u space x))$,
+an element of $T 1 = Omega$. Through @D6 and @D7 the soft quantifiers are therefore programs
 too,
 $
-  exists^p (x tilde nu). phi & ≡ mss("let" x <- nu "in" scr(phi^p))^(1 slash p), \
-  forall^p (x tilde nu). phi & ≡ mss("let" x <- nu "in" scr(phi^(-p)))^(-1 slash p):
+  exists^p (x tilde nu). phi & ≡ mss("let" x <- nu "in" fct(phi^p))^(1 slash p), \
+  forall^p (x tilde nu). phi & ≡ mss("let" x <- nu "in" fct(phi^(-p)))^(-1 slash p):
 $
-sample $x$ from $nu$, score by the softened body, read off the mass, and unsoften. When
+sample $x$ from $nu$, weight the run by the softened body, read off the mass, and unsoften. When
 $nu$ is a probability measure, $I_X (nu, u)$ is the expectation $EE_(x tilde nu)[u(x)]$, which
 is why we allow $EE_(x tilde nu)[phi]$ as a synonym for $integral_(x tilde nu) phi$ in that
 case.
@@ -909,7 +891,7 @@ case.
   With the Borel constant $phi := lambda x : RR. space e^(-x^2 slash 2) : Prd RR$ form the
   program
   $
-    M := "let" x <- smp_(Leb) "in" scr(phi space x) seq ret x quad : quad Dst RR,
+    M := "let" x <- smp_(Leb) "in" fct(phi space x) seq ret x quad : quad Dst RR,
   $
   whose denotation is the density action $sem(M) = Leb act sem(phi)$: the unnormalised
   Gaussian, of total mass $sqrt(2 pi)$. Then $sem(nrm(M)) = cal(N)(0, 1)$, and
@@ -930,7 +912,7 @@ case.
   $kappa := lambda x : RR. space "let" z <- smp_(cal(N)(0,1)) "in" ret (x + z) : RR -> Dst RR$,
   the open formula $x : RR tack exists^2 (y tilde kappa space x). psi space y : Omega$ denotes
   $g |-> (EE_(y tilde cal(N)(g, 1))[y^2])^(1 slash 2) = sqrt(g^2 + 1)$ by @thm:kernel: the
-  $2$-mean of $abs(y)$ along the Gaussian kernel centred at $g$. None of $smp_Leb$, $scr$
+  $2$-mean of $abs(y)$ along the Gaussian kernel centred at $g$. None of $smp_Leb$, $fct$
   or an open measure argument is expressible in the probability version.
 ]
 
