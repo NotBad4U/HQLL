@@ -91,8 +91,8 @@
 )
 
 #let tb(..args) = table(
-  inset: 5pt,
-  stroke: 0.4pt + rgb("#cbd5e1"),
+  inset: 8pt,
+  stroke: 0.4pt + rgb("#515151"),
   ..args,
 )
 
@@ -103,30 +103,24 @@
 *Truth values* $Omega = [0,oo]$.
 
 #tb(
-  columns: (1fr, auto, auto),
-  table.header([*operation*], [*unit*], [*status*]),
+  columns: (1fr, auto),
+  table.header([*operation*], [*unit*]),
   [$a ⊗ b = a b$ #h(1em) ($0 ⊗ oo = 0$)],
   [$1$],
-  [primitive],
   [$a ⊕ b = a + b$],
   [$0$],
-  [primitive],
   [$a^* = 1 slash a$, #h(0.4em) $0^* = oo$],
   [---],
-  [primitive],
   [$a^p$ #h(1em) ($0^p = 0$, #h(0.3em) $oo^p = oo$, #h(0.3em) $p in (0, oo)$)],
   [---],
-  [primitive],
   [$a ⊗^* b = a b$ #h(1em) ($0 ⊗^* oo = oo$)],
   [$1$],
-  [defined (@D2)],
   [$a multimap b = sup{c mid(|) a ⊗ c <= b} = a^* ⊗^* b$],
   [---],
-  [defined (@D3)],
-  [$a ⊕^p b = (a^p + b^p)^(1 slash p)$, #h(0.4em) $a ⊕^(-p) b = (a^(-p) + b^(-p))^(-1 slash p)$],
+  [$a or^p b = (a^p ⊕ b^p)^(1 slash p) quad quad a and^(-p) b = (a^(-p) ⊕ b^(-p))^(-1 slash p)$],
   [$0$ / $oo$],
-  [defined (@D4, @D5)],
 )
+
 
 
 = Syntax
@@ -163,7 +157,7 @@ $
 Terms are those of the simply typed $lambda$-calculus over the signature $Sig$ of
 @tab:sig, whose constants come in families indexed by types $A, B$, by a softness
 $p in (0, oo)$, by s-finite measures $mu$ and by Borel functions $f$. Formulas are the
-terms of type $Omega$ and predicates on $A$ the terms of type $Prd A$.
+terms of type $Omega$ and predicates on $A$ the terms of type $Prd A$. We abbreviates $lambda a. space lambda b. space M$ as $lambda a space b. space M$.
 
 #figure(
   tb(
@@ -182,7 +176,7 @@ terms of type $Omega$ and predicates on $A$ the terms of type $Prd A$.
     [$Omega -> Omega -> Omega$],
     [$(-)^*$],
     [$Omega -> Omega$],
-    [$(-)^p$ #h(0.4em) ($p in (0, oo)$)],
+    [$(-)^p$ #h(0.4em) ($p in [-oo, oo]$)],
     [$Omega -> Omega$],
     [$integral_A$],
     [$Dst A -> (A -> Omega) -> Omega$],
@@ -272,66 +266,39 @@ As in HOL there are exactly four typing rules:
 == Definitions and notation <sec:defs>
 
 HOL builds $top, forall, exists, bot, not, and, or$ from the three primitives $=$,
-$supset$ and $epsilon$ by *definitions* $tack c = M$, each introducing a new constant
-@gordonmelham1993. We do the same, without $epsilon$: each line below adds a constant to
-$Sig$ with the displayed type, together with the equation $c ≡ M$ (@sec:eqth). Throughout,
-$p in (0, oo)$ unless stated otherwise, and $lambda a b. space M$ abbreviates
-$lambda a. space lambda b. space M$.
+$arrow$ and $epsilon$ @gordonmelham1993. We do the same approach but without $epsilon$.
+We define the new constants in $Sig$ with the displayed type, together with the equation $c ≡ M$ (@sec:eqth).
+Throughout, $p in [-oo, oo]$ unless stated otherwise.
 
 #[
-  // D-numbering is local to this display; the rest of the paper stays unnumbered.
   #set math.equation(numbering: n => "D" + str(n), supplement: none)
   #counter(math.equation).update(0)
   $
-    oo & ≔ 0^* && : Omega #<D1> \
-    ⊗^* & ≔ lambda a b. space (a^* ⊗ b^*)^* && : Omega -> Omega -> Omega #<D2> \
-    multimap & ≔ lambda a b. space (a ⊗ b^*)^* quad (= a^* ⊗^* b) && : Omega -> Omega -> Omega #<D3> \
-    ⊕^p & ≔ lambda a b. space (a^p ⊕ b^p)^(1 slash p) && : Omega -> Omega -> Omega #<D4> \
-    ⊕^(-p) & ≔ lambda a b. space (a^* ⊕^p b^*)^* && : Omega -> Omega -> Omega #<D5> \
-    exists^p_A & ≔ lambda nu u. space (integral_A space nu space (lambda x. space (u space x)^p))^(1 slash p) && : Dst A -> (A -> Omega) -> Omega #<D6> \
-    forall^p_A & ≔ lambda nu u. space (exists^p_A space nu space (lambda x. space (u space x)^*))^* && : Dst A -> (A -> Omega) -> Omega quad (p in (0, oo]) #<D7>
+    oo & ≔ 0^* : Omega #<D1> \
+    ⊗^* & ≔ lambda a space b. space (a^* ⊗ b^*)^* : Omega -> Omega -> Omega #<D2> \
+    multimap & ≔ lambda a space b. space a^* ⊗^* b : Omega -> Omega -> Omega #<D3> \
+    or^p & ≔ lambda a space b. space (a^p ⊕ b^p)^(1 slash p) : Omega -> Omega -> Omega #<D4> \
+    and^(-p) & ≔ lambda a space b. space (a^* ⊕^p b^*)^* : Omega -> Omega -> Omega #<D5> \
+    exists^p_A & ≔ lambda nu space u. space (integral_A space nu space (lambda x. space (u space x)^p))^(1 slash p) : Dst A -> (A -> Omega) -> Omega #<D6> \
+    forall^p_A & ≔ lambda nu space u. space (exists^p_A space nu space (lambda x. space (u space x)^*))^* : Dst A -> (A -> Omega) -> Omega #<D7>
   $
 ]
 
-D3 is the place where HOL defines $exists P$ as $P (epsilon P)$. Here the existential is
-instead *computed*: @D6 says that $exists^p_nu u$ is the $L^p (nu)$-norm of $u$, an
-arithmetic $p$-mean when $nu$ is a probability measure, and @D7 makes $forall^p$ its De
-Morgan dual, the harmonic $p$-mean, exactly as in @capucci2024quantifiers. Both are
-definable from the single integration constant $integral_A$ because
-$(a^*)^p = (a^p)^* = a^(-p)$ and $(t^(1 slash p))^* = t^(-1 slash p)$ hold in $[0, oo]$,
-including at the corners $0^* = oo$, $0^p = 0$, $oo^p = oo$; hence
-$forall^p_nu u = (integral u^(-p) dif nu)^(-1 slash p)$ (@lem:dendef). The hard existential
-$exists^oo$ (essential supremum) remains primitive: it is the limit of $exists^p$ only for
-measures of finite mass --- $exists^p_Leb 1 = oo$ for every $p < oo$ while
-$exists^oo_Leb 1 = 1$ --- so it is not a term in the other constants. @D7 at $p = oo$ gives
-$forall^oo_nu u = (exists^oo_nu u^*)^*$, the essential infimum.
+@D3 is the place where HOL defines $exists P$ as $P (epsilon P)$.
+Here the existential is instead computed.
+We define the existential quantifier in @D6 as the $L^p (nu)$-norm of $u$, an arithmetic $p$-mean when $nu$ is a probability measure, and @D7 makes $forall^p$ its De
+Morgan dual, the harmonic $p$-mean.
+Similarly approach done for the universal quantifier $forall^p_nu u$ (@lem:dendef).
+At $p = oo$ gives the hard existential $exists^oo$ is the essential supremum, and $forall^oo_nu u$ the essential infimum.
 
-*Notation.* We use the following abbreviations; each right-hand side is an official term.
-
-- $⟨M, N⟩ ≔ pr space M space N$, and, for $M : Dst A$,
-  $"let" x <- M "in" N ≔ bnd space M space (lambda x : A. space N)$ @moggi1991, with
-  $M ; N ≔ "let" x <- M "in" N$ for $x$ fresh.
-- Infix and postfix notation for the $Omega$-constants: $phi ⊗ psi$, $phi ⊕^p psi$,
-  $phi multimap psi$, $phi^*$, $phi^p$.
-- *Binders.* For any constant $Q : Dst A -> (A -> Omega) -> Omega$ --- in particular
-  $integral_A$, $exists^p_A$ and $forall^p_A$ ---
-  $
-    Q space (x tilde nu). space phi quad ≔ quad Q space nu space (lambda x : A. space phi),
-  $
-  read "$Q$ over $x$ drawn from $nu$". The type of $x$ is determined by $nu : Dst A$ and
-  is omitted. We write $integral_(x tilde nu) phi$ for the integral binder,
-  $EE_(x tilde nu)[phi]$ as a synonym when $nu$ is a probability measure, and $x tilde mu$
-  for $x tilde smp_mu$ when $mu$ is a constant measure. The term $nu$ may contain free
-  variables of the context: $Gamma tack nu : Dst A$ is then a *kernel*, and
-  $forall^p (x tilde nu). forall^q (y tilde kappa space x). phi$ quantifies $y$ along the
-  kernel $kappa : A -> Dst B$ at the point $x$.
-
-This is exactly HOL's reading of $forall x : sigma. space phi$ as
-$forall (lambda x : sigma. space phi)$, with one more argument. Compared with a
-presentation in which the bound variable ranges over a *measured type* $A_omega$, the
-binder $forall^p (x : A_omega). phi$ becomes $forall^p (x tilde omega). phi$ with
-$omega : Dst A$ an ordinary term, and the softness $p$ is an index of the constant rather
-than a grade on the bound variable.
+#notations[
+  We use the following abbreviations:
+  - $⟨M, N⟩ ≔ pr space M space N$, and, for $M : Dst A$,
+    $"let" x <- M "in" N ≔ bnd space M space (lambda x : A. space N)$ @moggi1991, with
+    $M ; N ≔ "let" x <- M "in" N$ for $x$ fresh.
+  - For any constant $Q : Dst A -> (A -> Omega) -> Omega$ (quantifiers) we write
+    $Q space (x tilde nu). space phi$ read $Q$ over $x$ drawn from $nu : Dst A$ where the type is omitted.
+]
 
 == Equational theory <sec:eqth>
 
@@ -805,7 +772,7 @@ denote the cartesian structure of $"QBS"$.
 #theorem([Quantifiers are means along kernels])[
   Let $Gamma tack nu : Dst A$ and $Gamma, x : A tack phi : Omega$, put $X := sem(A)$, and
   for $g in sem(Gamma)$ write $nu_g := sem(nu)(g) in T X$, an s-finite measure on
-  $(|X|, Sigma_(M_X))$. Then for $p in (0, oo)$
+  $(|X|, Sigma_(M_X))$. Then for $p in [-oo, oo]$
   $
     sem(forall^p (x tilde nu). phi)(g) & = (integral_X sem(phi)(g, x)^(-p) space nu_g (dif x))^(-1 slash p)
                                          = integral^(-p)_(x tilde nu_g) sem(phi)(g, x), \
@@ -864,7 +831,7 @@ case.
 
 #lemma([Mass scaling])[
   Let $Gamma tack nu : Dst A$ and $g in sem(Gamma)$ with $0 < nu_g (|X|) < oo$, so that
-  $"normalise"(nu_g) = sem(nrm(nu))(g)$. For $p in (0, oo)$,
+  $"normalise"(nu_g) = sem(nrm(nu))(g)$. For $p in [-oo, oo]$,
   $
     sem(exists^p (x tilde nu). phi)(g) & = nu_g (|X|)^(1 slash p) ⊗ sem(exists^p (x tilde nrm(nu)). phi)(g), \
     sem(forall^p (x tilde nu). phi)(g) & = nu_g (|X|)^(-1 slash p) ⊗ sem(forall^p (x tilde nrm(nu)). phi)(g).
@@ -873,7 +840,7 @@ case.
   $1$ is no longer a unit for $forall^p$ under an unnormalised measure, and
   $forall^p (x tilde nu). 1$ denotes $0$ where $nu_g (|X|) = oo$. At $p = oo$ the mass is
   invisible: $sem(forall^oo (x tilde nu). 1)(g) = 1$ whenever $nu_g eq.not 0$.
-  Consequently, for $phi$ with values in $(0, oo)$ $nu_g$-almost everywhere,
+  Consequently, for $phi$ with values in $[-oo, oo]$ $nu_g$-almost everywhere,
   $sem(forall^p (x tilde nu). phi multimap phi)(g) = nu_g (|X|)^(-1 slash p)$ (in general
   only $>=$, since $0 multimap 0 = oo multimap oo = oo$): reflexivity of a graded entailment
   $1 <= forall^p (x tilde nu). phi multimap phi$ holds exactly for sub-probability $nu$,
