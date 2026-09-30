@@ -2,6 +2,8 @@
 
 #import "@preview/showybox:2.0.4": showybox
 #import "@preview/curryst:0.6.0": prooftree, rule
+// Extra room above and below the inference bar, so tall operators (e.g. integrals) do not touch it.
+#let prooftree = prooftree.with(vertical-spacing: 0.4em)
 #import "@preview/commute:0.3.0": arr, commutative-diagram, node
 #import "@preview/equate:0.3.2": equate
 
@@ -28,6 +30,15 @@
 
 // Per-line numbering and labels in multi-line equations (used for D1--D7).
 #show: equate.with(breakable: true)
+// Colour references to equations (equate turns each labelled line into an equation figure).
+#show ref: it => {
+  let el = it.element
+  if el != none and (el.func() == math.equation or (el.func() == figure and el.kind == math.equation)) {
+    text(fill: colors.emerald, it)
+  } else {
+    it
+  }
+}
 
 // ---------------- notation ----------------
 #let sem(x) = $lr(⟦ #x ⟧)$
@@ -180,8 +191,6 @@ terms of type $Omega$ and predicates on $A$ the terms of type $Prd A$. We abbrev
     [$Omega -> Omega$],
     [$integral_A$],
     [$Dst A -> (A -> Omega) -> Omega$],
-    [$exists^oo_A$],
-    [$Dst A -> (A -> Omega) -> Omega$],
     [$ret$],
     [$A -> Dst A$],
     [$bnd$],
@@ -194,10 +203,6 @@ terms of type $Omega$ and predicates on $A$ the terms of type $Prd A$. We abbrev
     [$Dst 1 -> Omega$],
     [$nrm$],
     [$Dst A -> Dst A$],
-    [Borel $f : RR^n -> RR$],
-    [$RR -> dots.c -> RR$],
-    [Borel $f : RR^n -> [0, oo]$],
-    [$RR -> dots.c -> Omega$],
   ),
   caption: [The signature $Sig$ of HQLL],
 ) <tab:sig>
@@ -278,7 +283,7 @@ Throughout, $p in [-oo, oo]$ unless stated otherwise.
     ⊗^* & ≔ lambda a space b. space (a^* ⊗ b^*)^* : Omega -> Omega -> Omega #<D2> \
     multimap & ≔ lambda a space b. space a^* ⊗^* b : Omega -> Omega -> Omega #<D3> \
     or^p & ≔ lambda a space b. space (a^p ⊕ b^p)^(1 slash p) : Omega -> Omega -> Omega #<D4> \
-    and^(-p) & ≔ lambda a space b. space (a^* ⊕^p b^*)^* : Omega -> Omega -> Omega #<D5> \
+    and^(p) & ≔ lambda a space b. space (a^* ⊕^(-p) b^*)^* : Omega -> Omega -> Omega #<D5> \
     exists^p_A & ≔ lambda nu space u. space (integral_A space nu space (lambda x. space (u space x)^p))^(1 slash p) : Dst A -> (A -> Omega) -> Omega #<D6> \
     forall^p_A & ≔ lambda nu space u. space (exists^p_A space nu space (lambda x. space (u space x)^*))^* : Dst A -> (A -> Omega) -> Omega #<D7>
   $
@@ -293,111 +298,64 @@ At $p = oo$ gives the hard existential $exists^oo$ is the essential supremum, an
 
 #notations[
   We use the following abbreviations:
-  - $⟨M, N⟩ ≔ pr space M space N$, and, for $M : Dst A$,
-    $"let" x <- M "in" N ≔ bnd space M space (lambda x : A. space N)$ @moggi1991, with
-    $M ; N ≔ "let" x <- M "in" N$ for $x$ fresh.
+  - $⟨M, N⟩ ≔ pr space M space N$, and, for $M : Dst A$, $"let" x <- M "in" N ≔ bnd space M space (lambda x : A. space N)$, with $M ; N ≔ "let" x <- M "in" N$ for $x$ fresh.
   - For any constant $Q : Dst A -> (A -> Omega) -> Omega$ (quantifiers) we write
     $Q space (x tilde nu). space phi$ read $Q$ over $x$ drawn from $nu : Dst A$ where the type is omitted.
 ]
 
 == Equational theory <sec:eqth>
 
-The judgement $Gamma tack M ≡ N : A$ is the least congruence --- reflexive, symmetric,
-transitive, closed under Abs and App --- containing the definitional equations of
-@sec:defs and the axioms below. It plays the role of HOL's axioms and conversion rules. The
-inequational part of the logic, graded entailment, is not treated here (@sec:quasitripos).
+The judgement $Gamma tack M ≡ N : A$ is the least congruence i.e. reflexive, symmetric, transitive, closed under Abs and App --- containing the definitional equations of @sec:defs and the axioms below. It plays the role of HOL's axioms and conversion rules.
 
-*Cartesian closed structure.*
 
-#grid(
+#block(above: 1.5em, below: 1.5em, grid(
   columns: (1fr, 1fr),
   column-gutter: 16pt,
-  row-gutter: 7pt,
+  row-gutter: 1.5em,
   align: left,
   $(lambda x : A. space M) space N ≡ M[N slash x]$, $pi_i ⟨M_1, M_2⟩ ≡ M_i$,
   $lambda x : A. space (M space x) ≡ M quad (x in.not "FV"(M))$, $⟨pi_1 M, pi_2 M⟩ ≡ M$,
-  $M ≡ ast quad (M : 1)$, [],
-)
+  $M ≡ ast quad (M : 1)$, $s[arrow(phi)] ≡ t[arrow(phi)] quad (s = t "in" [0, oo])$,
 
-*Monad laws* @moggi1991*, with commutativity.*
+  $fct(1) ≡ ret ast$, $fct(phi) seq fct(psi) ≡ fct(phi ⊗ psi)$,
+  $mss(fct(phi)) ≡ phi$, $fct(mss(m)) ≡ m$,
 
-#grid(
-  columns: (1fr, 1fr),
-  column-gutter: 16pt,
-  row-gutter: 7pt,
-  align: left,
   $"let" x <- ret M "in" N ≡ N[M slash x]$, $"let" x <- M "in" ret x ≡ M$,
-)
+  grid.cell(colspan: 2, $"let" y <- ("let" x <- M "in" N) "in" P ≡ "let" x <- M "in" "let" y <- N "in" P$),
+  grid.cell(colspan: 2, $"let" x <- M "in" "let" y <- N "in" P ≡ "let" y <- N "in" "let" x <- M "in" P$),
+))
 
-$
-  "let" y <- ("let" x <- M "in" N) "in" P & ≡ "let" x <- M "in" "let" y <- N "in" P, \
-    "let" x <- M "in" "let" y <- N "in" P & ≡ "let" y <- N "in" "let" x <- M "in" P,
-$
-with $x in.not "FV"(P)$ in the first equation (associativity) and $x in.not "FV"(N)$,
-$y in.not "FV"(M)$ in the second. The second equation is *commutativity*: the order of independent computations is
-immaterial. It is sound because the s-finite monad is commutative
-(@vakar2026sfinite[Thm. 19], @staton2017commutative), and it is the equation that fails for
-general (non s-finite) measures, where Fubini's theorem is unavailable.
-
-*Factor and mass.*
-$
-  fct(1) ≡ ret ast, quad quad fct(phi) seq fct(psi) ≡ fct(phi ⊗ psi), \
-  mss(fct(phi)) ≡ phi, quad quad fct(mss(m)) ≡ m .
-$
-
-*Truth-value identities.* For every identity $s = t$ between terms built from variables
-and $0, 1, ⊗, ⊕, (-)^*, (-)^p$ that holds at *all* points of $[0, oo]$ under the
-conventions $0 ⊗ oo = 0$ and $0^* = oo$ (@sec:omega; @capucci2026notes[Def. 2.1 and
-  Lemmas 2.19--2.20]),
-$
-  Gamma tack s[arrow(phi)] ≡ t[arrow(phi)] : Omega .
-$
-Thus $a ⊗ (b ⊕ c) ≡ (a ⊗ b) ⊕ (a ⊗ c)$, $(a^*)^* ≡ a$ and $(a ⊗ b)^p ≡ a^p ⊗ b^p$ are
-axioms, whereas $a ⊗ a^* ≡ 1$ is not: it fails at $0$ and at $oo$. This schema is
-Capucci's "structural schema" @capucci2026notes[§7.2] and replaces HOL's axioms for
-$"bool"$ (two truth values, antisymmetry of implication): $Omega$ is a Girard quantale,
-not a two-element Boolean algebra.
-
-*Integration.* Where HOL has the axiom of choice for $epsilon$, we have three axioms for
-$integral$:
-$
-  ("∫-prog") quad & integral_(x tilde nu) phi ≡ mss("let" x <- nu "in" fct(phi)) \
-   ("∫-lin") quad & integral_(x tilde nu) (phi ⊕ psi) ≡ integral_(x tilde nu) phi ⊕ integral_(x tilde nu) psi \
-  ("∫-zero") quad & integral_(x tilde nu) 0 ≡ 0
-$
-The first says that *quantifying is running a program*: integrating $phi$ against $nu$ is
-sampling $x$ from $nu$, scoring by $phi$ and reading off the mass. The other two are
-additivity of the integral, which no monad law provides. Everything else follows.
+Where HOL has the axiom of choice for $epsilon$, we have three axioms for $integral$:
+#[
+  #let names = ("∫-prog", "∫-lin", "∫-zero")
+  #set math.equation(numbering: n => names.at(n - 1, default: str(n)), supplement: none)
+  #counter(math.equation).update(0)
+  $
+    integral_(x tilde nu) phi ≡ mss("let" x <- nu "in" fct(phi)) #<eq:int-prog> \
+    integral_(x tilde nu) (phi ⊕ psi) ≡ integral_(x tilde nu) phi ⊕ integral_(x tilde nu) psi #<eq:int-lin> \
+    integral_(x tilde nu) 0 ≡ 0 #<eq:int-zero>
+  $
+]
+The @eq:int-prog says that quantifying is running a program, integrating $phi$ against $nu$ is sampling $x$ from $nu$, scoring by $phi$ and reading off the mass.
+The @eq:int-lin and @eq:int-zero are additivity of the integral, which no monad law provides. Everything else follows.
 
 #lemma([Derived integration laws])[
-  The following equations are derivable, with $x in.not "FV"(phi)$ in ∫-bind and
-  $x in.not "FV"(psi)$ in ∫-hom:
-  $
-       ("∫-ret") quad & integral_(x tilde ret M) phi ≡ phi[M slash x] \
-      ("∫-bind") quad & integral_(y tilde ("let" x <- M "in" N)) phi ≡ integral_(x tilde M) integral_(y tilde N) phi \
-    ("∫-factor") quad & integral_(x tilde fct(psi)) phi ≡ psi ⊗ phi[ast slash x] \
-       ("∫-hom") quad & integral_(x tilde nu) (psi ⊗ phi) ≡ psi ⊗ integral_(x tilde nu) phi \
-      ("Fubini") quad & integral_(x tilde nu) integral_(y tilde rho) phi ≡ integral_(y tilde rho) integral_(x tilde nu) phi
-  $
-  #proof[
-    Unfold ∫-prog. For ∫-ret use the left unit law and $mss compose fct ≡ "id"$. For
-    ∫-bind, associativity moves the outer $"let"$ inside, and
-    $fct(phi) ≡ fct(mss("let" y <- N "in" fct(phi)))$ by $fct compose mss ≡ "id"$. For
-    ∫-factor, $phi ≡ phi[ast slash x]$ since $x : 1$, then the factor law and
-    $mss compose fct ≡ "id"$. For ∫-hom, $fct(psi ⊗ phi) ≡ fct(psi) seq fct(phi)$,
-    commutativity moves $fct(psi)$ out of the $"let"$ because $x in.not "FV"(psi)$, and
-    $fct(psi) seq m ≡ fct(psi ⊗ mss(m))$ by the factor laws. Fubini is commutativity.
+  The following equations are derivable, with $x in.not "FV"(phi)$ in @eq:int-bind and
+  $x in.not "FV"(psi)$ in @eq:int-hom:
+  #[
+    #let names = ("∫-ret", "∫-bind", "∫-factor", "∫-hom", "Fubini")
+    #set math.equation(numbering: n => names.at(n - 1, default: str(n)), supplement: none)
+    #counter(math.equation).update(0)
+    $
+      integral_(x tilde ret M) phi ≡ phi[M slash x] #<eq:int-ret> \
+      integral_(y tilde ("let" x <- M "in" N)) phi ≡ integral_(x tilde M) integral_(y tilde N) phi #<eq:int-bind> \
+      integral_(x tilde fct(psi)) phi ≡ psi ⊗ phi[ast slash x] #<eq:int-factor> \
+      integral_(x tilde nu) (psi ⊗ phi) ≡ psi ⊗ integral_(x tilde nu) phi #<eq:int-hom> \
+      integral_(x tilde nu) integral_(y tilde rho) phi ≡ integral_(y tilde rho) integral_(x tilde nu) phi #<eq:fubini>
+    $
   ]
 ]
 
-#remark[
-  Two things are deliberately absent. There is no *discard* law
-  $"let" y <- N "in" M ≡ M$: it is unsound for unnormalised $N$, since discarding a factor
-  scales the result by its mass (@lem:marginals). And $nrm$ has no axiom: normalisation is
-  partial (zero and infinite masses), so its behaviour is fixed only semantically
-  (@def:normalise). Inequalities --- Hölder, Minkowski, monotonicity of $p$-means in $p$,
-  mass scaling (@lem:mass) --- are the business of graded entailment, not of $≡$.
-]
 
 = Semantics
 
@@ -755,11 +713,11 @@ denote the cartesian structure of $"QBS"$.
       $sem(fct(phi) seq fct(psi)) = sem(phi) sem(psi) dot delta_ast$ by the density action.
     - *Truth-value identities*: the connectives are interpreted pointwise, so an identity
       valid at all points of $[0, oo]$ holds between the composites.
-    - *∫-prog*: $I_X (nu, u) = (nu act u)(|X|) = sem("let" x <- nu "in" fct(u space x))$,
+    - *@eq:int-prog*: $I_X (nu, u) = (nu act u)(|X|) = sem("let" x <- nu "in" fct(u space x))$,
       the density action of @def:sfinite read as a measure on the one-point space, and
       $mss$ is the identity.
-    - *∫-lin, ∫-zero*: the integral is additive and $integral 0 space dif nu = 0$.
-    The derived laws then hold automatically; ∫-bind is also directly the characterisation
+    - *@eq:int-lin, @eq:int-zero*: the integral is additive and $integral 0 space dif nu = 0$.
+    The derived laws then hold automatically; @eq:int-bind is also directly the characterisation
     $I_Y (f^dagger nu, v) = I_X (nu, lambda x. I_Y (f x, v))$ of Kleisli extension in
     @def:sfinite.
   ]
@@ -814,7 +772,7 @@ denote the cartesian structure of $"QBS"$.
 
 == Quantifying is running a program
 
-By the axiom ∫-prog and its soundness, the integration operator is definable in the
+By the axiom @eq:int-prog and its soundness, the integration operator is definable in the
 computational fragment: $I_X (nu, u) = (nu act u)(|X|) = sem("let" x <- nu "in" fct(u space x))$,
 an element of $T 1 = Omega$. Through @D6 and @D7 the soft quantifiers are therefore programs
 too,
