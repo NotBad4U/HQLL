@@ -70,6 +70,8 @@
 #let act = math.class("binary", sym.triangle.stroked.r)
 // sequencing M ; N inside function calls (a bare ";" would split the arguments)
 #let seq = math.class("binary", ";")
+// Kleisli bind  ν >>= f, as the usual LaTeX \mathbin{>\!\!\!>\mkern-6.7mu=}
+#let kbind = math.class("binary", $>#h(-9em / 18)>#h(-6.7em / 18)=$)
 // Binder sugar  Q (x ∼ ν). φ  :=  Q ν (λx. φ)
 #let qb(Q, x, nu, body) = $#Q thin (#x tilde #nu). thin #body$
 #let letin(x, M, N) = $"let" #x <- #M "in" #N$
@@ -111,8 +113,6 @@
 
 = Multiplicative Extended Reals $RR_times.o$ <sec:omega>
 
-*Truth values* $Omega = [0,oo]$.
-
 #tb(
   columns: (1fr, auto),
   table.header([*operation*], [*unit*]),
@@ -132,6 +132,18 @@
   [$0$ / $oo$],
 )
 
+#notations[
+  #grid(
+    columns: (auto, auto, 1fr),
+    column-gutter: 1.2em,
+    row-gutter: 0.6em,
+    [- $bb(I)$: unit interval $[0, 1]$], [- $overline(RR)$: extended real line $[-oo, oo]$],
+    grid.cell(rowspan: 2)[- $overline(RR)_+$: $[0, oo]$.],
+
+    [- $RR$: real line $(-oo, oo)$], [- $RR_+$: non-negative reals $[0, oo)$],
+  )
+]
+
 
 
 = Syntax
@@ -148,7 +160,7 @@ $
 $
 
 The type constants are $1$, $RR$ and the type $Omega$ of truth values; the type operators
-are $times$, $->$ and the s-finite measure type $Dst$. The $Omega$ plays the role of $[0,infinity]$ i.e. Prop,
+are $times$, $->$ and the s-finite measure type $Dst$. The $Omega$ plays the role of $overline(RR)_+$ i.e. Prop,
 and $RR$ that of individual: it is standard Borel.
 A term of type $Dst A$ denotes an s-finite measure on the space denoted by $A$. The measure
 is not required to be normalised: it may be a probability distribution, but also an
@@ -213,7 +225,7 @@ The $fct(phi)$ multiplies the weight of the current execution by the truth value
 its inverse $mss$ reads a measure on the one-point type back as a truth value.
 
 #remark[
-  $Omega$ and $Dst 1$ denote the same space $[0, oo]$ (@def:sfinite)
+  $Omega$ and $Dst 1$ denote the same space $[0, oo]$ (@prop:sbs-measures)
 ]
 == Typing
 
@@ -293,8 +305,15 @@ Throughout, $p in [-oo, oo]$ unless stated otherwise.
 Here the existential is instead computed.
 We define the existential quantifier in @D6 as the $L^p (nu)$-norm of $u$, an arithmetic $p$-mean when $nu$ is a probability measure, and @D7 makes $forall^p$ its De
 Morgan dual, the harmonic $p$-mean.
-Similarly approach done for the universal quantifier $forall^p_nu u$ (@lem:dendef).
-At $p = oo$ gives the hard existential $exists^oo$ is the essential supremum, and $forall^oo_nu u$ the essential infimum.
+Similarly approach done for the universal quantifier $forall^p_nu u$.
+
+#remark[
+  At $p = oo$ gives the hard existential $exists^oo$ is the essential supremum, and $forall^oo$ the essential infimum.
+
+  $
+    exists^oo = or.big^oo quad quad forall^oo = and.big^oo
+  $
+]
 
 #notations[
   We use the following abbreviations:
@@ -318,7 +337,8 @@ The judgement $Gamma tack M ≡ N : A$ is the least congruence i.e. reflexive, s
   $M ≡ ast quad (M : 1)$, $s[arrow(phi)] ≡ t[arrow(phi)] quad (s = t "in" [0, oo])$,
 
   $fct(1) ≡ ret ast$, $fct(phi) seq fct(psi) ≡ fct(phi ⊗ psi)$,
-  $mss(fct(phi)) ≡ phi$, $fct(mss(m)) ≡ m$,
+  $mss(fct(phi)) ≡ phi$,
+  $fct(mss(m)) ≡ m$,
 
   $"let" x <- ret M "in" N ≡ N[M slash x]$, $"let" x <- M "in" ret x ≡ M$,
   grid.cell(colspan: 2, $"let" y <- ("let" x <- M "in" N) "in" P ≡ "let" x <- M "in" "let" y <- N "in" P$),
@@ -362,51 +382,49 @@ The @eq:int-lin and @eq:int-zero are additivity of the integral, which no monad 
 == Preliminaries <sec:prelim>
 
 #definition("QBS")[
-  $X = (|X|, M_X)$ is a *quasi-Borel space* with a underlying set $|X|$ and a set of functions $M_X subset.eq { RR -> |X|}$ closed under precomposition with Borel maps, containing constants, closed under countable Borel gluing. Given $f: X -> Y$ is a morphism if and only if $f compose alpha in M_Y$ for all $alpha in M_X$.
+  $X = (|X|, M_X)$ is a quasi-Borel space with a underlying set $|X|$ and a set of functions $M_X subset.eq { RR -> |X|}$ closed under precomposition with Borel maps, containing constants, closed under countable Borel gluing. Given $f: X -> Y$ is a QBS morphism if and only if $f compose alpha in M_Y$ for all $alpha in M_X$.
   - QBS is cartesian closed: $M_(Y^X) = { alpha mid(|) "uncurry"(alpha) in "QBS"(RR times X, Y)}$
   - QBS is well pointed
   - $Sigma_(M_X) = { U mid(|) forall alpha in M_X dot alpha^(-1) U in Sigma_RR}$ is the induced 𝜎-algebra.
   - $M_X = Qbs(RR, X)$, and for a standard Borel space $X$ (regarded as a QBS with
-    $M_X = Meas(RR, X)$) one has $Qbs(X, Y) = Meas(X, Sigma_(M_Y))$
-    @vakar2026sfinite[Thm. 18].
+    $M_X = Meas(RR, X)$) one has $Qbs(X, Y) = Meas(X, Sigma_(M_Y))$.
 ]
 
-Measures on a QBS are introduced through the *s-finite monad* $T$ of
-@scibior2018denotational, in the presentation of @vakar2026sfinite[§11]. Recall that a
-measure $mu$ on a measurable space is *s-finite* if it is a countable sum of finite
-measures, and that a kernel $k : X kto Y$ is s-finite if it is a countable sum of
-kernels $k_i$ with $sup_x k_i (x, Y) < oo$ @vakar2026sfinite[Def. 1]. S-finite kernels are
-closed under composition @staton2017commutative and contain the probability kernels,
+Measures on a QBS are introduced through the s-finite monad $T$ @scibior2018denotational @vakar2026sfinite.
+Recall that a measure $mu$ on a measurable space is s-finite if it is a countable sum of finite measures, and that a kernel $k : X kto Y$ is s-finite if it is a countable sum of kernels $k_i$ with $sup_x k_i (x, Y) < oo$.
+S-finite kernels are closed under composition @staton2017commutative and contain the probability kernels,
 Lebesgue measure and counting measure on $NN$; counting measure on $RR$ is not s-finite.
 
-#definition([S-finite measures on a QBS: the monad $T$])[
+#definition([The monad $T$])[
   Let $X in Qbs$ and let $Sbs$ denote the standard Borel spaces.
-  - A *(randomisable) s-finite measure* on $X$ is a triple $⟨W, mu, alpha⟩$ with
-    $W in Sbs$, $mu$ an s-finite measure on $W$ and $alpha in Qbs(W, X)$
-    @vakar2026sfinite[Def. 6]. It integrates every $f in Qbs(X, Omega)$ by
-    $
-      integral_X f dif ⟨W, mu, alpha⟩ := integral_W f(alpha(w)) space dif mu(w).
-    $
-  - Two triples are identified when they define the same integral operator on
-    $Qbs(X, Omega)$; equivalently @vakar2026sfinite[Thm. 20], when the push-forward
-    measures $alpha_* mu$ and $alpha'_* mu'$ on $Sigma_(M_X)$ coincide. The carrier
-    $|T X|$ is the set of classes $[W, mu, alpha]$.
-  - The random elements are the s-finite *kernels* into $X$:
-    $
-      M_(T X) := { r |-> [W, k(r, -), alpha(r, -)] mid(|) & W in Sbs, space k : RR kto W "an s-finite kernel", \
-                                                          & alpha in Qbs(RR times W, X) }.
-    $
-  - $T$ is a *commutative* monad on $Qbs$, with unit and bind inherited from the
-    continuation monad $((-) => Omega) => Omega$ into which $T$ embeds by
-    $nu |-> integral_X (-) dif nu$ @vakar2026sfinite[Thm. 19].
-  - If $X in Sbs$, then $|T X|$ is the set of *all* s-finite measures on $X$, and for
-    $X, Y in Sbs$ the Kleisli hom $Qbs(X, T Y)$ is the set of all s-finite kernels
-    $X kto Y$ @vakar2026sfinite[Cor. 2]. In particular $T 1 = [0, oo] = Omega$.
-  - The probability monad $cal(P)$ of @qbs is the sub-monad of $T$ obtained by requiring
-    $mu$ to be a probability measure, so every object and construction of the probability
-    version is a special case of what follows. ($T$ is the semantic incarnation of the
-    type constructor written $Dst$ above.)
+  A *(randomisable) s-finite measure* on $X$ is a triple $T X := ⟨W, mu, alpha⟩$ with
+  $W in Sbs$, $mu$ an s-finite measure on $W$ and $alpha in Qbs(W, X)$.
+  It integrates every $f in Qbs(X, Omega)$ by
+  $
+    integral_X f dif ⟨W, mu, alpha⟩ := integral_W f(alpha(w)) space dif mu(w).
+  $
+  - $ret_X : X -> T X$ \
+    $ret_X (x) := ⟨1, delta_ast, ast |-> x⟩$
+  - $(kbind) : T X times Qbs(X, T Y) -> T Y$ \
+    $⟨W, mu, alpha⟩ kbind f := ⟨W times V, space A |-> bb(E)_(w tilde mu) [k(w, A_w)], space beta⟩$ \
+    with $f(alpha(w)) = ⟨V, k(w, -), beta(w, -)⟩$ \
+    and $k : W kto V$, #h(0.5em) $beta in Qbs(W times V, Y)$
 ] <def:sfinite>
+
+#proposition[
+  $T$ is a commutative monad on $Qbs$, embedded in the continuation monad
+  $((-) => Omega) => Omega$ by $nu |-> integral_X (-) dif nu$.
+] <prop:comm-monad>
+
+
+#proposition[
+  For $X, Y in Sbs$, $|T X|$ is the set of all s-finite measures on $X$, and $Qbs(X, T Y)$
+  the set of s-finite kernels $X kto Y$. In particular $T 1 = [0, oo] = Omega$.
+] <prop:sbs-measures>
+
+#definition([Probability monad])[
+  The probability monad $cal(P)$ is the sub-monad of $T$ where $mu$ is a probability measure.
+]
 
 #lemma([One parameter line suffices])[
   Every s-finite measure on $X$ has a representative on $W = RR$, and every random
@@ -415,59 +433,6 @@ Lebesgue measure and counting measure on $NN$; counting measure on $RR$ is not s
       |T X| & = { [alpha, mu] mid(|) alpha in M_X, space mu "s-finite on" RR } slash ~, \
     M_(T X) & = { r |-> [alpha, k(r, -)] mid(|) alpha in M_X, space k : RR kto RR "an s-finite kernel" }.
   $
-  #proof[
-    Every $W in Sbs$ is a measurable retract of $RR$ @vakar2026sfinite[Prop. 1]:
-    $W -->^f RR -->^g W$ with $g compose f = "id"_W$. Then
-    $[W, mu, alpha] = [RR, f_* mu, alpha compose g]$ because
-    $(alpha compose g)_* f_* mu = alpha_* (g compose f)_* mu = alpha_* mu$; here $f_* mu$
-    is s-finite as a push-forward of an s-finite measure @vakar2026sfinite[Thm. 1] and
-    $alpha compose g in Qbs(RR, X) = M_X$. For random elements apply the same retraction to
-    $k(r, -)$ pointwise, then absorb the $r$-dependence of $alpha(r, -)$ into the kernel
-    through a Borel isomorphism $phi : RR tilde.equiv RR times RR$:
-    $[alpha(r, -), k(r, -)] = [alpha compose phi, space (phi^(-1))_* (delta_r ⊗ k(r, -))]$,
-    where $r |-> delta_r ⊗ k(r, -)$ is an s-finite kernel $RR kto RR times RR$ by
-    @vakar2026sfinite[Thm. 5(3)].
-  ]
-]
-
-Henceforth we write $[alpha, mu]$ for elements of $T X$, exactly as in the probability
-version, with the single difference that $mu$ is an s-finite measure on $RR$ rather than
-a probability measure.
-
-#definition([Monad structure, strength and density action])[
-  In the representation $[alpha, mu]$:
-  - *Functor.* On morphisms $f : X -> Y$ the action is $T(f)[alpha, mu] := [f compose alpha, mu]$.
-  - *Unit* $eta_X (x) := [lambda r. x, space delta_0]$, the Dirac measure at $x$.
-  - *Kleisli extension.* For $f : X -> T Y$ the composite $f compose alpha in M_(T Y)$ has
-    the form $r |-> [beta, k(r, -)]$ by the previous lemma, and
-    $
-      f^dagger [alpha, mu] := [beta, space mu ; k], quad quad
-      (mu ; k)(V) := integral_RR k(r, V) space dif mu(r),
-    $
-    the composite of the s-finite kernels $mu : 1 kto RR$ and $k : RR kto RR$, which is
-    s-finite @vakar2026sfinite[Thm. 1]. Equivalently, $f^dagger$ is characterised on
-    integrals by $I_Y (f^dagger nu, v) = I_X (nu, space lambda x. I_Y (f x, v))$ for all
-    $v in Omega^Y$, with $I$ the integration operator of @def:integration.
-  - *Strength* $"st"_(X, Y)(x, [alpha, mu]) := [lambda r. (x, alpha(r)), space mu]$, and
-    symmetrically the costrength $"st"'_(X, Y) : T X times Y -> T(X times Y)$.
-  - *Double strength.* For $nu = [alpha, mu] in T X$ and $rho = [beta, mu'] in T Y$ the
-    product measure is $nu ⊗ rho := [alpha times beta, space mu ⊗ mu'] in T(X times Y)$,
-    the double strength of the commutative monad $T$ @vakar2026sfinite[Thm. 19]. Here
-    $mu ⊗ mu'$ is the product of s-finite measures on $RR^2$ defined by iterated
-    integration; the order of integration is immaterial by the limited Fubini theorem for
-    s-finite kernels (@staton2017commutative, @vakar2026sfinite[Thm. 4]). It interprets
-    $"let" x <- M "in" "let" y <- N "in" ret ⟨x, y⟩$, and may differ from the maximal
-    (Carathéodory) product, which we never use.
-  - *Density action.* For $nu = [alpha, mu] in T X$ and $u in Omega^X$,
-    $
-      nu act u := [alpha, space mu act (u compose alpha)], quad quad
-      (mu act g)(U) := integral_U g space dif mu,
-    $
-    an s-finite measure by @vakar2026sfinite[Thm. 5(3)]. It depends only on the class of
-    $nu$, since $(alpha)_* (mu act (u compose alpha)) = (alpha_* mu) act u$, and it
-    satisfies $(nu act u)(|X|) = I_X (nu, u)$. Scalar multiplication
-    $c dot nu := nu act (lambda x. c)$ for $c in [0, oo]$ (with $0 dot oo = 0$) is the
-    special case of a constant density.
 ]
 
 == Types and contexts
@@ -603,7 +568,7 @@ $X -> Y$ commutes with it strictly; the connectives act *pointwise* on formulas.
 
 The primitive constant $integral_A$ is interpreted by $I_(sem(A))$, curried:
 $sem(integral_A) : T X -> Omega^(Omega^X)$, $nu |-> I_X (nu, -)$ with $X = sem(A)$. This is
-precisely the embedding of $T X$ into the continuation monad of @def:sfinite --- the
+precisely the embedding of $T X$ into the continuation monad of @prop:comm-monad --- the
 primitive of the logic identifies a measure with its integration functional.
 
 *Hard existential.* $sem(exists^oo_A)(nu, u) := esssup_nu u$, the essential supremum of
@@ -706,7 +671,7 @@ denote the cartesian structure of $"QBS"$.
     By induction on derivations. The clauses of @sec:terms are compositional, so the
     congruence rules are preserved and it suffices to check the axioms.
     - *Cartesian closed laws*: $"QBS"$ is cartesian closed.
-    - *Monad laws and commutativity*: $T$ is a commutative monad (@def:sfinite);
+    - *Monad laws and commutativity*: $T$ is a commutative monad (@prop:comm-monad);
       commutativity is the limited Fubini theorem for s-finite kernels
       (@staton2017commutative, @vakar2026sfinite[Thm. 4]).
     - *Factor and mass*:$sem(fct) = sem(mss) = "id"$, and
@@ -719,7 +684,7 @@ denote the cartesian structure of $"QBS"$.
     - *@eq:int-lin, @eq:int-zero*: the integral is additive and $integral 0 space dif nu = 0$.
     The derived laws then hold automatically; @eq:int-bind is also directly the characterisation
     $I_Y (f^dagger nu, v) = I_X (nu, lambda x. I_Y (f x, v))$ of Kleisli extension in
-    @def:sfinite.
+    @prop:comm-monad.
   ]
 ]
 
