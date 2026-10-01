@@ -567,6 +567,64 @@ $
   $
 ]
 
-= Graded entailment <sec:quasitripos>
+= Graded logical entailment <sec:quasitripos>
+
+The typing context $Gamma$ carries no measure and no grade. Both live in a second, ordered
+context that records, for each variable, the measure it is drawn from and the softness at which
+it is quantified.
+
+#definition("Graded context")[
+  A graded context is a list
+  $
+    Theta ::= diamond.small mid(|) Theta seq x tilde^p nu quad quad (p in (0, oo])
+  $
+  Its underlying typing context $Gamma_Theta$ erases measures and grades:
+  $Gamma_diamond.small := diamond.small$ and $Gamma_(Theta seq x tilde^p nu) := Gamma_Theta, x : A$.
+  It is well formed when every measure is a term over the variables declared before it:
+  $Gamma_Theta tack nu : Dst A$ and $x in.not Gamma_Theta$.
+]
+
+#let Seq = math.op("Seq")
+Semantically a typing context is a product in $Qbs$, where variables may be tupled and
+permuted, while a graded context is an ordered sequence, where they may not. Writing
+$Seq(Qbs)$ for the free ordered-product category on $Qbs$ @capucci2026notes, erasure is the
+product functor $Pi : Seq(Qbs) -> Qbs$, right adjoint to the inclusion of singletons, and
+passing from a typing context to a graded one is the counit $delta_Gamma$ of this
+coreflection, which fixes the order of the variables. It is the cone of the product, so it
+commutes with the projections, the only structural maps of $Seq(Qbs)$:
+
+#align(center, commutative-diagram(
+  node-padding: (120pt, 55pt),
+  node((0, 0), $(sem(A_1) times dots.c times sem(A_n))$),
+  node((0, 1), $(sem(A_1) seq dots seq sem(A_n))$),
+  node((1, 1), $(sem(A_i))$),
+  arr((0, 0), (0, 1), $delta_Gamma$),
+  arr((0, 0), (1, 1), $(pi_i)$, label-pos: right),
+  arr((0, 1), (1, 1), $"pr"_i$),
+))
+
+A graded context is an ordered chain of kernels: the measure of a variable may depend on the
+variables declared before it, and $p$ is the softness of the universal quantifier that binds it.
+
+#definition("Logical sequent")[
+  Let $Theta = x_1 tilde^(p_1) nu_1 seq dots seq x_n tilde^(p_n) nu_n$ be well formed and
+  $Gamma_Theta tack psi_1, dots, psi_k, phi : Omega$. The sequent
+  $
+    Theta thin | thin psi_1, dots, psi_k tack phi
+  $
+  denotes the closed formula
+  $
+    forall^(p_1) (x_1 tilde nu_1). space dots.c space forall^(p_n) (x_n tilde nu_n). space
+    ((psi_1 ⊗ dots.c ⊗ psi_k) multimap phi) : Omega
+  $
+  where the empty list of assumptions stands for $1$. It is _valid_ when
+  $1 <= sem(Theta thin | thin psi_1\, dots\, psi_k tack phi)$.
+]
+
+The sequent reads: in the graded context $Theta$, which declares every variable free in
+$psi_1, dots, psi_k$ and $phi$, the formula $phi$ is true under the assumptions
+$psi_1, dots, psi_k$.
+
+
 
 #bibliography("bibliography.bib")
