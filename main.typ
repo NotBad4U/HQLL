@@ -227,60 +227,6 @@ its inverse $mss$ reads a measure on the one-point type back as a truth value.
 #remark[
   $Omega$ and $Dst 1$ denote the same space $[0, oo]$ (@prop:sbs-measures)
 ]
-== Typing
-
-
-#definition("Context")[
-  Contexts $Gamma ::= diamond.small mid(|) Gamma, x : A$ are finite lists of distinct typed variables.
-]
-
-#definition("Judgement")[
-  The judgements are
-  $
-    Gamma tack M : A quad quad Gamma tack M ≡ N : A
-  $
-  $M$ is a well-typed term of type $A$ in context $Gamma$, and the other denote the equational judgement.
-]
-As in HOL there are exactly four typing rules:
-
-#grid(
-  columns: (1fr, 1fr),
-  gutter: 9pt,
-  row-gutter: 14pt,
-  prooftree(rule(name: [Var], $Gamma\, x : A\, Gamma' tack x : A$)),
-  prooftree(rule(name: [Con], $(c : A) in Sig$, $Gamma tack c : A$)),
-
-  prooftree(rule(name: [Abs], $Gamma\, x : A tack M : B$, $Gamma tack lambda x : A. space M : A -> B$)),
-  prooftree(rule(name: [App], $Gamma tack M : A -> B$, $Gamma tack N : A$, $Gamma tack M space N : B$)),
-)
-
-#example[
-  #align(center, prooftree(rule(
-    name: [App],
-    rule(
-      name: [App],
-      rule(
-        name: [Con],
-        $(integral_A : Dst A -> (A -> Omega) -> Omega) in Sig$,
-        $Gamma tack integral_A : Dst A -> (A -> Omega) -> Omega$,
-      ),
-      $Gamma tack nu : Dst A$,
-      $Gamma tack integral_A space nu : (A -> Omega) -> Omega$,
-    ),
-    rule(
-      name: [Abs],
-      $Gamma\, x : A tack phi : Omega$,
-      $Gamma tack lambda x : A. space phi : A -> Omega$,
-    ),
-    $Gamma tack integral_A space nu space (lambda x : A. space phi) : Omega$,
-  )))
-
-  The term $integral_A space nu space (lambda x : A. space phi)$ sample $x$ from $nu$ and weight the outcome by the
-  truth value of $phi$.
-]
-
-
-== Definitions and notation <sec:defs>
 
 HOL builds $top, forall, exists, bot, not, and, or$ from the three primitives $=$,
 $arrow$ and $epsilon$ @gordonmelham1993. We do the same approach but without $epsilon$.
@@ -322,9 +268,65 @@ Similarly approach done for the universal quantifier $forall^p_nu u$.
     $Q space (x tilde nu). space phi$ read $Q$ over $x$ drawn from $nu : Dst A$ where the type is omitted.
 ]
 
+== Typing
+
+
+#definition("Context")[
+  Contexts $Gamma ::= diamond.small mid(|) Gamma, x : A$ are finite lists of distinct typed variables.
+]
+
+#definition("Judgement")[
+  The judgements are
+  $
+    Gamma tack M : A quad quad Gamma tack M ≡ N : A
+  $
+  $M$ is a well-typed term of type $A$ in context $Gamma$, and the other denote the equational judgement.
+]
+
+No measure and no grade is attached to a context. Measures live in the terms of type $Dst A$, and
+grades in the entailment layer (@sec:quasitripos). As in HOL there are exactly four typing rules:
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 9pt,
+  row-gutter: 14pt,
+  prooftree(rule(name: [Var], $Gamma\, x : A\, Gamma' tack x : A$)),
+  prooftree(rule(name: [Con], $(c : A) in Sig$, $Gamma tack c : A$)),
+
+  prooftree(rule(name: [Abs], $Gamma\, x : A tack M : B$, $Gamma tack lambda x : A. space M : A -> B$)),
+  prooftree(rule(name: [App], $Gamma tack M : A -> B$, $Gamma tack N : A$, $Gamma tack M space N : B$)),
+)
+
+#example[
+  #align(center, prooftree(rule(
+    name: [App],
+    rule(
+      name: [App],
+      rule(
+        name: [Con],
+        $(integral_A : Dst A -> (A -> Omega) -> Omega) in Sig$,
+        $Gamma tack integral_A : Dst A -> (A -> Omega) -> Omega$,
+      ),
+      $Gamma tack nu : Dst A$,
+      $Gamma tack integral_A space nu : (A -> Omega) -> Omega$,
+    ),
+    rule(
+      name: [Abs],
+      $Gamma\, x : A tack phi : Omega$,
+      $Gamma tack lambda x : A. space phi : A -> Omega$,
+    ),
+    $Gamma tack integral_A space nu space (lambda x : A. space phi) : Omega$,
+  )))
+
+  The term $integral_A space nu space (lambda x : A. space phi)$ sample $x$ from $nu$ and weight the outcome by the
+  truth value of $phi$.
+]
+
+
+
 == Equational theory <sec:eqth>
 
-The judgement $Gamma tack M ≡ N : A$ is the least congruence i.e. reflexive, symmetric, transitive, closed under Abs and App --- containing the definitional equations of @sec:defs and the axioms below. It plays the role of HOL's axioms and conversion rules.
+The judgement $Gamma tack M ≡ N : A$ is the least congruence i.e. reflexive, symmetric, transitive, closed under Abs and App --- containing the definitional equations of logical operators and the axioms below. It plays the role of HOL's axioms and conversion rules.
 
 
 #block(above: 1.5em, below: 1.5em, grid(
@@ -439,24 +441,26 @@ Lebesgue measure and counting measure on $NN$; counting measure on $RR$ is not s
 
 We define the semantics of types recursively as follows:
 
-#grid(
-  columns: (1fr, 1fr, 1fr),
-  align: center,
-  row-gutter: 10pt,
-  $sem(1) = 1$, $sem(RR) = RR$, $sem(Omega) = [0,oo] = T 1$,
-  $sem(A times B) = sem(A) times sem(B)$, $sem(A -> B) = sem(B)^(sem(A))$, $sem(Dst A) = T sem(A)$,
-) <eq:types>
+#block(above: 1em, below: 1em)[
+  #grid(
+    columns: (1fr, 1fr, 1fr),
+    align: center,
+    row-gutter: 10pt,
+    $sem(1) = 1$, $sem(RR) = RR$, $sem(Omega) = overline(RR)_+$,
+    $sem(A times B) = sem(A) times sem(B)$, $sem(A -> B) = sem(B)^(sem(A))$, $sem(Dst A) = T sem(A)$,
+  ) <eq:types>
+]
 
 where $[0, oo]$ is standard Borel with $M_Omega = {"Borel" RR -> [0, oo] }$; in particular
-$sem(Prd A) = Omega^(sem(A))$ and $sem(Omega) = sem(Dst 1)$. A context is interpreted by
-the cartesian product in $"QBS"$,
+$sem(Prd A) = Omega^(sem(A))$ and $sem(Omega) = sem(Dst 1)$.
+
+A context is interpreted by the cartesian product in $"QBS"$:
 $
   sem(x_1 : A_1\, dots\, x_n : A_n) := sem(A_1) times dots.c times sem(A_n),
 $ <eq:ctx>
+
 the terminal object $1$ for the empty context. This is the standard interpretation of a
-simply typed $lambda$-calculus in a cartesian closed category @jacobs1999cltt: no measure
-and no grade is attached to a context. Measures live in the terms of type $Dst A$, and
-grades in the entailment layer (@sec:quasitripos).
+simply typed $lambda$-calculus in a cartesian closed category @jacobs1999cltt.
 
 == Terms <sec:terms>
 
