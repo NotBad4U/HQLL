@@ -24,12 +24,20 @@
 #let thmtriR = text(sym.triangle.filled.r, font: "DejaVu Sans Mono", size: thm-tri-size, colors.gray)
 #let thmtriL = text(sym.triangle.filled.l, font: "DejaVu Sans Mono", size: thm-tri-size, colors.gray)
 
+// True inside the (emphasised) body of a theorem environment; `rocqlink`
+// uses it to toggle the emphasis back so that Rocq identifiers stay upright.
+#let _in-thm-body = state("hqll-in-thm-body", false)
+
 #let thm-base = thmbox.with(
   base: none,
   titlefmt: it => text(font: fonts.sans)[#thmtriR *#it*],
   namefmt: it => text(font: fonts.sans)[(#it)],
   separator: text(font: fonts.sans)[*.*#h(0.2em)],
-  bodyfmt: emph,
+  bodyfmt: it => emph({
+    _in-thm-body.update(true)
+    it
+    _in-thm-body.update(false)
+  }),
   inset: 0em,
 )
 
@@ -52,6 +60,55 @@
 )
 
 #let proof = prf-base("Proof")
+
+// ---------------- Links to the Rocq mechanisation ----------------
+
+// Repository and branch the links point to; GitHub line anchors are appended.
+#let rocq-repo = "https://github.com/NotBad4U/HQLL/blob/HOL/"
+
+// The Rocq logo, recoloured from white to the emerald of the template.
+#let rocq-logo(height: 1.1em) = {
+  let svg = read("assets/logo-rocq-vertical_TRP-white.svg").replace("#fffdfd", colors.emerald.to-hex())
+  box(baseline: 20%, image(bytes(svg), format: "svg", height: height))
+}
+
+// Plain text of a string or of simple content such as [const].
+// In markup, [theories/syntax.v#168] is the sequence [theories/syntax.v][168]
+// (the # starts an embedded expression), so the # is lost: _rocq-target
+// below does not rely on it.
+#let _plain(x) = {
+  if type(x) == str { x } else if type(x) != content { str(x) } else if x.has("text") { x.text } else if x.has(
+    "children",
+  ) { x.children.map(_plain).join("") } else if x == [ ] { " " } else { "" }
+}
+
+// "theories/syntax.v#168" or "theories/syntax.v#168-185" (the # and L are
+// optional) -> (path: "theories/syntax.v", anchor: "#L168" or "#L168-L185").
+// In markup the hyphen of a range becomes a minus sign (U+2212) or a dash.
+#let _rocq-target(target) = {
+  let s = _plain(target).trim()
+  let m = s.match(regex("^(.*?\\.v)#?L?(\\d+)(?:[-−–]L?(\\d+))?$"))
+  if m == none { return (path: s, anchor: "") }
+  let (path, from, to) = m.captures
+  (path: path, anchor: "#L" + from + if to != none { "-L" + to } else { "" })
+}
+
+// #rocqlink[const][theories/syntax.v#168]: a badge with the Rocq logo and the
+// identifier `const`, linking to that line of the file in `rocq-repo`.
+// The target is "path#line" or "path#from-to"; a range links to "#Lfrom-Lto".
+#let rocqlink(name, target, size: 7pt) = {
+  let t = _rocq-target(target)
+  link(rocq-repo + t.path + t.anchor, box(
+    fill: colors.emerald.lighten(85%),
+    inset: (x: 3pt, y: 0.8pt),
+    radius: 2pt,
+    text(size: size, fill: colors.emerald, weight: "bold", {
+      rocq-logo(height: 1.05em)
+      h(0.3em)
+      context if _in-thm-body.get() { emph(raw(_plain(name))) } else { raw(_plain(name)) }
+    }),
+  ))
+}
 
 #let para-lipics(
   title: none,

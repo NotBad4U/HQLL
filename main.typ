@@ -156,7 +156,7 @@ $
 $
 
 The type constants are $1$, $RR$ and the type $Omega$ of truth values; the type operators
-are $times$, $->$ and the s-finite measure type $Dst$. The $Omega$ plays the role of $overline(RR)_+$ i.e. Prop,
+are $times$, $->$ and the s-finite measure type $Dst$~#rocqlink[ty][theories/syntax.v#65]. The $Omega$ plays the role of $overline(RR)_+$ i.e. Prop,
 and $RR$ that of individual: it is standard Borel.
 A term of type $Dst A$ denotes an s-finite measure on the space denoted by $A$. The measure
 is not required to be normalised: it may be a probability distribution, but also an
@@ -164,7 +164,7 @@ unnormalised or infinite measure such as Lebesgue measure on $RR$, or
 the unnormalised posterior computed by a program that uses $fct$. The
 measure enters the logic only as a term of type $Dst A$.
 
-#definition("Predicate")[The type of predicates on $A$ is defined by $Prd A ≔ A -> Omega$]
+#definition("Predicate")[The type of predicates on $A$ is defined by $Prd A ≔ A -> Omega$~#rocqlink[Pred][theories/syntax.v#84]]
 
 == Terms and signature <sec:sig>
 
@@ -176,7 +176,7 @@ $
 Terms are those of the simply typed $lambda$-calculus over the signature $Sig$ of
 @tab:sig, whose constants come in families indexed by types $A, B$, by a softness
 $p in (0, oo)$, by s-finite measures $mu$ and by Borel functions $f$. Formulas are the
-terms of type $Omega$ and predicates on $A$ the terms of type $Prd A$. We abbreviates $lambda a. space lambda b. space M$ as $lambda a space b. space M$.
+terms of type $Omega$ and predicates on $A$ the terms of type $Prd A$. We abbreviates $lambda a. space lambda b. space M$ as $lambda a space b. space M$.~#rocqlink[tm][theories/syntax.v#204]
 
 #figure(
   tb(
@@ -212,7 +212,7 @@ terms of type $Omega$ and predicates on $A$ the terms of type $Prd A$. We abbrev
     [$nrm$],
     [$Dst A -> Dst A$],
   ),
-  caption: [The signature $Sig$ of HQLL],
+  caption: [The signature $Sig$ of HQLL~#rocqlink[const][theories/syntax.v#168-185]],
 ) <tab:sig>
 
 The computation $smp_mu$ draws from a constant s-finite measure $mu$ on $sem(A)$: a
@@ -226,7 +226,7 @@ its inverse $mss$ reads a measure on the one-point type back as a truth value.
 
 HOL builds $top, forall, exists, bot, not, and, or$ from the three primitives $=$,
 $arrow$ and $epsilon$ @gordonmelham1993. We do the same approach but without $epsilon$.
-We define the new constants in $Sig$ with the displayed type, together with the equation $c ≡ M$ (@sec:eqth).
+We define the new constants in $Sig$ with the displayed type, together with the equation $c ≡ M$ (@sec:eqth)~#rocqlink[Infty … Forall][theories/syntax.v#321-355].
 Throughout, $p in [-oo, oo]$ unless stated otherwise.
 
 #[
@@ -261,15 +261,15 @@ Similarly approach done for the universal quantifier $forall^p_nu u$.
 
 #notations[
   We use the following abbreviations:
-  - $⟨M, N⟩ ≔ pr space M space N$, and, for $M : Dst A$, $"let" x <- M "in" N ≔ bnd space M space (lambda x : A. space N)$, with $M ; N ≔ "let" x <- M "in" N$ for $x$ fresh.
+  - $⟨M, N⟩ ≔ pr space M space N$, and, for $M : Dst A$, $"let" x <- M "in" N ≔ bnd space M space (lambda x : A. space N)$, with $M ; N ≔ "let" x <- M "in" N$ for $x$ fresh~#rocqlink[Letin, Seq][theories/syntax.v#379-386].
   - For any constant $Q : Dst A -> (A -> Omega) -> Omega$ (quantifiers) we write
-    $Q space (x tilde nu). space phi$ read $Q$ over $x$ drawn from $nu : Dst A$ where the type is omitted.
+    $Q space (x tilde nu). space phi$ read $Q$ over $x$ drawn from $nu : Dst A$ where the type is omitted~#rocqlink[qbind][theories/syntax.v#361].
 ]
 
 == Typing
 
 #definition("Context")[
-  Contexts $Gamma ::= diamond.small mid(|) Gamma, x : A$ are finite lists of distinct typed variables.
+  Contexts $Gamma ::= diamond.small mid(|) Gamma, x : A$ are finite lists of distinct typed variables~#rocqlink[ctx][theories/syntax.v#118].
 ]
 
 #definition("Judgement")[
@@ -281,7 +281,7 @@ Similarly approach done for the universal quantifier $forall^p_nu u$.
 ]
 
 No measure and no grade is attached to a context. Measures live in the terms of type $Dst A$, and
-grades in the entailment layer (@sec:quasitripos). As in HOL there are exactly four typing rules:
+grades in the entailment layer (@sec:quasitripos). As in HOL there are exactly four typing rules~#rocqlink[tm][theories/syntax.v#204-208]:
 
 #grid(
   columns: (1fr, 1fr),
