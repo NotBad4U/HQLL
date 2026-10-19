@@ -12,7 +12,7 @@ From mathcomp Require Import all_boot ssralg ssrnum reals constructive_ereal.
 (*                                                                            *)
 (* Terms are intrinsically typed, with de Bruijn indices: a term              *)
 (* [M : tm Σ Γ A] is a derivation of the paper's judgement [Γ ⊢ M : A], so    *)
-(* the four typing rules Var/Con/Abs/App are the four constructors of [tm],   *)
+(* the four typing rules Var/Con/Lam/App are the four constructors of [tm],   *)
 (* a context is a list of types, and the side condition that the variables    *)
 (* of a context be distinct disappears.                                       *)
 (*                                                                            *)
@@ -33,7 +33,7 @@ From mathcomp Require Import all_boot ssralg ssrnum reals constructive_ereal.
 (*                  ctx == typing contexts, lists of types                     *)
 (*              var Γ A == de Bruijn variables of type A in Γ                  *)
 (*             tm Σ Γ A == terms of type A in context Γ (derivations of        *)
-(*                         Γ ⊢ M : A); constructors Var, Con, Abs, App         *)
+(*                         Γ ⊢ M : A); constructors Var, Con, Lam, App         *)
 (*            ren Γ Δ, rename rho M == renamings and their action on terms    *)
 (*            sub Γ Δ, subst sigma M == substitutions and their action        *)
 (*             weaken M == M in a context extended by one variable            *)
@@ -48,10 +48,14 @@ From mathcomp Require Import all_boot ssralg ssrnum reals constructive_ereal.
 (*     Letin M N, M ;; N == let x <- M in N  and  M ; N                        *)
 (* ```                                                                        *)
 (*                                                                            *)
-(* Notations (scope [hqll_scope], key [hqll]):                                *)
+(* Notations (scope [hqll_scope], key [hqll]; see the section Notations):      *)
 (* ```                                                                        *)
-(*   ⟨ M , N ⟩   M ⊗ N   M ⊕ N   M `*   M ⊗* N   M -o N   M ∨ [ p ] N        *)
-(*   M ∧ [ p ] N   M.[N]   M ;; N                                             *)
+(*   #0 #1 #2 #3   M · N   λ M            variables, application, abstraction *)
+(*   ⟨ M , N ⟩   π1 M   π2 M              pairing and projections             *)
+(*   0   𝟙   M ⊗ N   M ⊕ N   M `*   M ^ p  the primitive connectives          *)
+(*   ∫_A nu u   M >>= f   M.[N]           integral, bind, substitution        *)
+(*   ∞   ⊥   ⊤   M ⊗* N   M -o N   M ∨^p N   M ∧^p N   the derived ones       *)
+(*   ∫ nu , phi   ∃^p nu , phi   ∀^p nu , phi   M ;; N     binders, sequencing *)
 (* ```                                                                        *)
 (******************************************************************************)
 
@@ -183,6 +187,7 @@ Inductive const : ty -> Type :=
 | CFactor : const (TOmega → TMeas TUnit)                (** factor *)
 | CMass : const (TMeas TUnit → TOmega)                  (** mass *)
 | CNorm A : const (TMeas A → TMeas A).                  (** norm *)
+
 #[global] Arguments CPair {A B}.
 #[global] Arguments CFst {A B}.
 #[global] Arguments CSnd {A B}.
@@ -196,7 +201,7 @@ Inductive const : ty -> Type :=
     constructors are the typing rules:
 <<
       (Var) Γ, x : A, Γ' ⊢ x : A          (Con) (c : A) ∈ Σ  ⇒  Γ ⊢ c : A
-      (Abs) Γ, x : A ⊢ M : B  ⇒  Γ ⊢ λx : A. M : A → B
+      (Lam) Γ, x : A ⊢ M : B  ⇒  Γ ⊢ λx : A. M : A → B
       (App) Γ ⊢ M : A → B,  Γ ⊢ N : A  ⇒  Γ ⊢ M N : B
 >>
     Formulas are the terms of type [TOmega], predicates on A those of type
@@ -204,7 +209,7 @@ Inductive const : ty -> Type :=
 Inductive tm (Γ : ctx) : ty -> Type :=
 | Var A : var Γ A -> tm Γ A
 | Con A : const A -> tm Γ A
-| Abs A B : tm (A :: Γ) B -> tm Γ (A → B)
+| Lam A B : tm (A :: Γ) B -> tm Γ (A → B)
 | App A B : tm Γ (A → B) -> tm Γ A -> tm Γ B.
 #[global] Arguments Con {Γ A}.
 
@@ -216,7 +221,7 @@ Fixpoint rename Γ Δ A (rho : ren Γ Δ) (M : tm Γ A) : tm Δ A :=
   match M with
   | Var _ x => Var (rho _ x)
   | Con _ c => Con c
-  | Abs _ _ M => Abs (rename (ren_lift rho) M)
+  | Lam _ _ M => Lam (rename (ren_lift rho) M)
   | App _ _ M N => App (rename rho M) (rename rho N)
   end.
 
@@ -248,7 +253,7 @@ Fixpoint subst Γ Δ A (sigma : sub Γ Δ) (M : tm Γ A) : tm Δ A :=
   match M with
   | Var _ x => sigma _ x
   | Con _ c => Con c
-  | Abs _ _ M => Abs (subst (sub_lift sigma) M)
+  | Lam _ _ M => Lam (subst (sub_lift sigma) M)
   | App _ _ M N => App (subst sigma M) (subst sigma N)
   end.
 
@@ -273,36 +278,103 @@ Definition subst1 Γ A B (M : tm (A :: Γ) B) (N : tm Γ A) : tm Γ B :=
 
 Definition Star Γ : tm Γ TUnit := Con CStar.
 #[global] Arguments Star {Γ}.
+
 Definition Pair Γ A B (M : tm Γ A) (N : tm Γ B) : tm Γ (A × B) :=
   App (App (Con CPair) M) N.
+
 Definition Fst Γ A B (M : tm Γ (A × B)) : tm Γ A := App (Con CFst) M.
+
 Definition Snd Γ A B (M : tm Γ (A × B)) : tm Γ B := App (Con CSnd) M.
+
 Definition Zero Γ : tm Γ TOmega := Con CZero.
 #[global] Arguments Zero {Γ}.
+
 Definition One Γ : tm Γ TOmega := Con COne.
 #[global] Arguments One {Γ}.
+
 Definition Tens Γ (M N : tm Γ TOmega) : tm Γ TOmega :=
   App (App (Con CTens) M) N.
+
 Definition Plus Γ (M N : tm Γ TOmega) : tm Γ TOmega :=
   App (App (Con CPlus) M) N.
+
 Definition Inv Γ (M : tm Γ TOmega) : tm Γ TOmega := App (Con CInv) M.
+
 Definition Pow Γ (p : \bar R) (M : tm Γ TOmega) : tm Γ TOmega :=
   App (Con (CPow p)) M.
+
 (** ∫_A nu u *)
 Definition Int Γ A (nu : tm Γ (TMeas A)) (u : tm Γ (A → TOmega)) :
     tm Γ TOmega :=
   App (App (Con (@CInt A)) nu) u.
+
 Definition Ret Γ A (M : tm Γ A) : tm Γ (TMeas A) := App (Con (@CRet A)) M.
+
 Definition Bind Γ A B (M : tm Γ (TMeas A)) (f : tm Γ (A → TMeas B)) :
     tm Γ (TMeas B) :=
   App (App (Con (@CBind A B)) M) f.
+
 Definition Sample Γ A (mu : meas Σ A) : tm Γ (TMeas A) := Con (CSample mu).
 #[global] Arguments Sample {Γ A} mu.
+
 Definition Factor Γ (M : tm Γ TOmega) : tm Γ (TMeas TUnit) :=
   App (Con CFactor) M.
+
 Definition Mass Γ (M : tm Γ (TMeas TUnit)) : tm Γ TOmega := App (Con CMass) M.
+
 Definition Norm Γ A (M : tm Γ (TMeas A)) : tm Γ (TMeas A) :=
   App (Con (@CNorm A)) M.
+
+End Terms.
+
+Arguments const {R} Σ A%_ty.
+Arguments tm {R} Σ Γ A%_ty.
+
+(** * Notations
+
+    Scope [hqll_scope] (key [hqll]).  Application binds tightest (level 10,
+    as Rocq's own), then [^] (30), [⊗] and [⊗*] (46), [⊕], [∨[p]], [∧[p]]
+    (50), [>>=] (49), [-o] (51, right), binders ([λ], [∫], [∃], [∀]) extend as
+    far to the right as possible (200), and [;;] is at 100.  The levels of
+    the connectives are those of their semantic counterparts in
+    [nonneg_ereal.v], so that a formula and its interpretation read alike. *)
+
+(** De Bruijn variables: [#0] is the last variable declared in the context,
+    i.e. the innermost bound variable, [#1] the one before, etc. *)
+Notation "#0" := (Var vz) : hqll_scope.
+Notation "#1" := (Var (vs vz)) : hqll_scope.
+Notation "#2" := (Var (vs (vs vz))) : hqll_scope.
+Notation "#3" := (Var (vs (vs (vs vz)))) : hqll_scope.
+
+(** λ-calculus: application [M · N] and abstraction [λ M], whose bound
+    variable is [#0] in [M] (its type is determined by the context of [M]). *)
+Notation "M · N" := (App M N) (at level 10, left associativity) : hqll_scope.
+Notation "'λ' M" := (Lam M) (at level 200, M at level 200,
+  format "'λ'  M") : hqll_scope.
+
+(** Products. *)
+Notation "⟨ M , N ⟩" := (Pair M N) : hqll_scope.
+Notation "'π1' M" := (Fst M) (at level 10, M at level 9) : hqll_scope.
+Notation "'π2' M" := (Snd M) (at level 10, M at level 9) : hqll_scope.
+
+(** The connectives of the logic. *)
+Notation "0" := Zero : hqll_scope.
+Notation "𝟙" := One : hqll_scope.
+Notation "M ⊗ N" := (Tens M N) (at level 46, left associativity) : hqll_scope.
+Notation "M ⊕ N" := (Plus M N) (at level 50, left associativity) : hqll_scope.
+Notation "M `*" := (Inv M) : hqll_scope.
+Notation "M ^ p" := (Pow p M) : hqll_scope.
+
+(** The integral [∫_A nu u] (the type A is explicit, as in the paper). *)
+Notation "∫_ A nu u" := (@Int _ _ _ A nu u)
+  (at level 10, A at level 0, nu at level 9, u at level 9,
+   format "∫_ A  nu  u") : hqll_scope.
+
+(** The monad. *)
+Notation "M >>= f" := (Bind M f) (at level 49, left associativity) : hqll_scope.
+
+(** Substitution for the last variable. *)
+Notation "M .[ N ]" := (subst1 M N) : hqll_scope.
 
 (** ** Derived constants (D1)--(D9)
 
@@ -312,97 +384,119 @@ Definition Norm Γ A (M : tm Γ (TMeas A)) : tm Γ (TMeas A) :=
     the equational theory.  Throughout p ∈ [-oo, oo] and 1/p is [p^-1] in
     [\bar R] (so 1/0 = +oo and 1/+oo = 0). *)
 
-(* de Bruijn indices: v0 is the innermost bound variable *)
-Local Notation v0 := vz.
-Local Notation v1 := (vs vz).
-Local Notation v2 := (vs (vs vz)).
+Section Derived.
+Context {R : realType} {Σ : signature R}.
+Local Open Scope hqll_scope.
 
-(** (D1) oo := 0^* *)
-Definition Infty Γ : tm Γ TOmega := Inv Zero.
+(** (D1) ∞ := 0^* *)
+Definition Infty Γ : tm Σ Γ TOmega := 0 `*.
 #[global] Arguments Infty {Γ}.
+
 (** (D2) ⊥ := 0 *)
-Definition Bot Γ : tm Γ TOmega := Zero.
+Definition Bot Γ : tm Σ Γ TOmega := 0.
 #[global] Arguments Bot {Γ}.
-(** (D3) ⊤ := oo *)
-Definition Top Γ : tm Γ TOmega := Infty.
+
+(** (D3) ⊤ := ∞ *)
+Definition Top Γ : tm Σ Γ TOmega := Infty.
 #[global] Arguments Top {Γ}.
+
 (** (D4) ⊗* := λa b. (a^* ⊗ b^* )^* *)
-Definition CoTens Γ : tm Γ (TOmega → TOmega → TOmega) :=
-  Abs (Abs (Inv (Tens (Inv (Var v1)) (Inv (Var v0))))).
+Definition CoTens Γ : tm Σ Γ (TOmega → TOmega → TOmega) :=
+  λ λ (#1 `* ⊗ #0 `*) `*.
 #[global] Arguments CoTens {Γ}.
+
 (** (D5) ⊸ := λa b. a^* ⊗* b *)
-Definition Limp Γ : tm Γ (TOmega → TOmega → TOmega) :=
-  Abs (Abs (App (App CoTens (Inv (Var v1))) (Var v0))).
+Definition Limp Γ : tm Σ Γ (TOmega → TOmega → TOmega) :=
+  λ λ CoTens · #1 `* · #0.
 #[global] Arguments Limp {Γ}.
+
 (** (D6) ∨^p := λa b. (a^p ⊕ b^p)^(1/p) *)
-Definition Por Γ (p : \bar R) : tm Γ (TOmega → TOmega → TOmega) :=
-  Abs (Abs (Pow (p^-1)%E (Plus (Pow p (Var v1)) (Pow p (Var v0))))).
+Definition Por Γ (p : \bar R) : tm Σ Γ (TOmega → TOmega → TOmega) :=
+  λ λ (#1 ^ p ⊕ #0 ^ p) ^ p^-1.
 #[global] Arguments Por {Γ} p.
+
 (** (D7) ∧^p := λa b. (a^* ∨^p b^* )^*, the De Morgan dual of (D6) *)
-Definition Pand Γ (p : \bar R) : tm Γ (TOmega → TOmega → TOmega) :=
-  Abs (Abs (Inv (App (App (Por p) (Inv (Var v1))) (Inv (Var v0))))).
+Definition Pand Γ (p : \bar R) : tm Σ Γ (TOmega → TOmega → TOmega) :=
+  λ λ (Por p · #1 `* · #0 `*) `*.
 #[global] Arguments Pand {Γ} p.
+
 (** (D8) ∃^p_A := λnu u. (∫_A nu (λx. (u x)^p))^(1/p) *)
 Definition Exists Γ A (p : \bar R) :
-    tm Γ (TMeas A → (A → TOmega) → TOmega) :=
-  Abs (Abs (Pow (p^-1)%E (Int (Var v1) (Abs (Pow p (App (Var v1) (Var v0))))))).
+    tm Σ Γ (TMeas A → (A → TOmega) → TOmega) :=
+  λ λ (∫_A #1 (λ (#1 · #0) ^ p)) ^ p^-1.
 #[global] Arguments Exists {Γ} A p.
+
 (** (D9) ∀^p_A := λnu u. (∃^p_A nu (λx. (u x)^* ))^* *)
 Definition Forall Γ A (p : \bar R) :
-    tm Γ (TMeas A → (A → TOmega) → TOmega) :=
-  Abs (Abs (Inv (App (App (Exists A p) (Var v1))
-                     (Abs (Inv (App (Var v1) (Var v0))))))).
+    tm Σ Γ (TMeas A → (A → TOmega) → TOmega) :=
+  λ λ (Exists A p · #1 · (λ (#1 · #0) `*)) `*.
 #[global] Arguments Forall {Γ} A p.
 
 (** ** Binder sugar
 
     For a quantifier Q : 𝒯 A → (A → Omega) → Omega,  Q (x ~ nu). phi  stands
-    for  Q nu (λx : A. phi); the body phi lives in the context extended by x. *)
-Definition qbind Γ A (Q : tm Γ (TMeas A → (A → TOmega) → TOmega))
-    (nu : tm Γ (TMeas A)) (phi : tm (A :: Γ) TOmega) : tm Γ TOmega :=
-  App (App Q nu) (Abs phi).
+    for  Q nu (λx : A. phi); the body phi lives in the context extended by x,
+    where x is [#0]. *)
+Definition qbind Γ A (Q : tm Σ Γ (TMeas A → (A → TOmega) → TOmega))
+    (nu : tm Σ Γ (TMeas A)) (phi : tm Σ (A :: Γ) TOmega) : tm Σ Γ TOmega :=
+  Q · nu · (λ phi).
 
 (** ∫_{x ~ nu} phi *)
-Definition Int_x Γ A (nu : tm Γ (TMeas A)) (phi : tm (A :: Γ) TOmega) :
-    tm Γ TOmega :=
-  Int nu (Abs phi).
+Definition Int_x Γ A (nu : tm Σ Γ (TMeas A)) (phi : tm Σ (A :: Γ) TOmega) :
+    tm Σ Γ TOmega :=
+  ∫_A nu (λ phi).
+
 (** ∃^p (x ~ nu). phi *)
-Definition Exists_x Γ A (p : \bar R) (nu : tm Γ (TMeas A))
-    (phi : tm (A :: Γ) TOmega) : tm Γ TOmega :=
+Definition Exists_x Γ A (p : \bar R) (nu : tm Σ Γ (TMeas A))
+    (phi : tm Σ (A :: Γ) TOmega) : tm Σ Γ TOmega :=
   qbind (Exists A p) nu phi.
+
 (** ∀^p (x ~ nu). phi *)
-Definition Forall_x Γ A (p : \bar R) (nu : tm Γ (TMeas A))
-    (phi : tm (A :: Γ) TOmega) : tm Γ TOmega :=
+Definition Forall_x Γ A (p : \bar R) (nu : tm Σ Γ (TMeas A))
+    (phi : tm Σ (A :: Γ) TOmega) : tm Σ Γ TOmega :=
   qbind (Forall A p) nu phi.
 
 (** let x <- M in N := bind M (λx : A. N) *)
-Definition Letin Γ A B (M : tm Γ (TMeas A)) (N : tm (A :: Γ) (TMeas B)) :
-    tm Γ (TMeas B) :=
-  Bind M (Abs N).
+Definition Letin Γ A B (M : tm Σ Γ (TMeas A)) (N : tm Σ (A :: Γ) (TMeas B)) :
+    tm Σ Γ (TMeas B) :=
+  M >>= λ N.
+
 (** M ; N := let x <- M in N, x fresh *)
-Definition Seq Γ A B (M : tm Γ (TMeas A)) (N : tm Γ (TMeas B)) :
-    tm Γ (TMeas B) :=
+Definition Seq Γ A B (M : tm Σ Γ (TMeas A)) (N : tm Σ Γ (TMeas B)) :
+    tm Σ Γ (TMeas B) :=
   Letin M (weaken N).
 
-End Terms.
+End Derived.
 
-Arguments const {R} Σ A%_ty.
-Arguments tm {R} Σ Γ A%_ty.
-
-Notation "⟨ M , N ⟩" := (Pair M N) : hqll_scope.
-Notation "M ⊗ N" := (Tens M N) (at level 46, left associativity) : hqll_scope.
-Notation "M ⊕ N" := (Plus M N) (at level 50, left associativity) : hqll_scope.
-Notation "M `*" := (Inv M) : hqll_scope.
+(** The derived connectives. *)
+Notation "∞" := Infty : hqll_scope.
+Notation "⊥" := Bot : hqll_scope.
+Notation "⊤" := Top : hqll_scope.
 Notation "M ⊗* N" := (App (App CoTens M) N)
   (at level 46, left associativity) : hqll_scope.
 Notation "M -o N" := (App (App Limp M) N)
   (at level 51, right associativity) : hqll_scope.
-Notation "M ∨ [ p ] N" := (App (App (Por p) M) N)
-  (at level 50, left associativity) : hqll_scope.
-Notation "M ∧ [ p ] N" := (App (App (Pand p) M) N)
-  (at level 50, left associativity) : hqll_scope.
-Notation "M .[ N ]" := (subst1 M N) : hqll_scope.
-Notation "M ;; N" := (Seq M N) (at level 100, right associativity) : hqll_scope.
+Notation "M ∨^ p N" := (App (App (Por p) M) N)
+  (at level 50, p at level 2, left associativity, format "M  ∨^ p  N")
+  : hqll_scope.
+Notation "M ∧^ p N" := (App (App (Pand p) M) N)
+  (at level 50, p at level 2, left associativity, format "M  ∧^ p  N")
+  : hqll_scope.
+
+(** The binders:  ∫ (x ~ nu). phi,  ∃^p (x ~ nu). phi,  ∀^p (x ~ nu). phi,
+    with x = [#0] in phi. *)
+Notation "∫ nu , phi" := (Int_x nu phi)
+  (at level 200, nu at level 99, format "∫  nu ,  phi") : hqll_scope.
+Notation "∃^ p nu , phi" := (Exists_x p nu phi)
+  (at level 200, p at level 2, nu at level 99, format "∃^ p  nu ,  phi")
+  : hqll_scope.
+Notation "∀^ p nu , phi" := (Forall_x p nu phi)
+  (at level 200, p at level 2, nu at level 99, format "∀^ p  nu ,  phi")
+  : hqll_scope.
+
+(** Sequencing. *)
+Notation "M ;; N" := (Seq M N)
+  (at level 100, right associativity, format "M  ;;  N") : hqll_scope.
 
 (** * Examples *)
 
@@ -410,26 +504,123 @@ Section Examples.
 Context {R : realType} {Σ : signature R}.
 Local Open Scope hqll_scope.
 
-(** The derivation of Section "Typing":  Γ ⊢ ∫_A nu (λx : A. phi) : Omega. *)
+(** The derivation of Section "Typing", Γ ⊢ ∫_A nu (λx : A. phi) : Ω:
+<<
+  (∫_A : 𝒯A → (A → Ω) → Ω) ∈ Σ
+  ----------------------------- (Con)
+  Γ ⊢ ∫_A : 𝒯A → (A → Ω) → Ω     Γ ⊢ nu : 𝒯A
+  ------------------------------------------- (App)   Γ, x : A ⊢ phi : Ω
+  Γ ⊢ ∫_A nu : (A → Ω) → Ω                            ------------------------ (Lam)
+                                                      Γ ⊢ λx : A. phi : A → Ω
+  ------------------------------------------------------------------------ (App)
+                      Γ ⊢ ∫_A nu (λx : A. phi) : Ω
+>>
+    Read bottom-up, the derivation is the term: [Con CInt] is the (Con) leaf,
+    each [·] an (App), [λ phi] the (Lam), and x is [#0] in phi. *)
 Example int_example Γ A (nu : tm Σ Γ (TMeas A)) (phi : tm Σ (A :: Γ) TOmega) :
-  tm Σ Γ TOmega := App (App (Con CInt) nu) (Abs phi).
+  tm Σ Γ TOmega := Con CInt · nu · (λ phi).
 
 Example int_example_sugar Γ A (nu : tm Σ Γ (TMeas A))
     (phi : tm Σ (A :: Γ) TOmega) :
-  int_example nu phi = Int_x nu phi.
+  int_example nu phi = ∫ nu, phi.
 Proof. by []. Qed.
 
-(** The defining equations of the derived constants hold by conversion. *)
-Example top_def Γ : (Top : tm Σ Γ TOmega) = Zero `*.
+(** The defining equations of the derived constants hold by conversion:
+    ⊤ := ∞ := 0^* by (D3), (D1), and Γ ⊢ 0^* : Ω is
+<<
+  ((-)^* : Ω → Ω) ∈ Σ        (0 : Ω) ∈ Σ
+  -------------------- (Con) ----------- (Con)
+  Γ ⊢ (-)^* : Ω → Ω          Γ ⊢ 0 : Ω
+  ------------------------------------- (App)
+              Γ ⊢ 0^* : Ω
+>> *)
+Example top_def Γ : (⊤ : tm Σ Γ TOmega) = 0 `*.
 Proof. by []. Qed.
 
-(** A sequent-like formula:  ∀^p (x ~ nu). (psi -o phi). *)
+(** phi ⊸ psi is the derived constant (D5) applied to phi and psi:
+<<
+  Γ ⊢ ⊸ : Ω → Ω → Ω (D5)   Γ ⊢ phi : Ω
+  ------------------------------------ (App)
+  Γ ⊢ ⊸ phi : Ω → Ω                      Γ ⊢ psi : Ω
+  --------------------------------------------------- (App)
+                 Γ ⊢ phi ⊸ psi : Ω
+>>
+    where the leaf (D5) is the derivation of the closed term
+    ◇ ⊢ λa b. a^* ⊗* b : Ω → Ω → Ω, read in any context Γ. *)
+Example limp_def Γ (phi psi : tm Σ Γ TOmega) :
+  phi -o psi = Limp · phi · psi.
+Proof. by []. Qed.
+
+(** A sequent-like formula, ∀^p (x ~ nu). (psi ⊸ phi), i.e. the quantifier
+    (D9) applied to nu and to the abstraction of the body:
+<<
+  Γ ⊢ ∀^p_A : 𝒯A → (A → Ω) → Ω (D9)   Γ ⊢ nu : 𝒯A
+  ------------------------------------------------ (App)
+  Γ ⊢ ∀^p_A nu : (A → Ω) → Ω
+
+                                 Γ, x : A ⊢ psi ⊸ phi : Ω   (as in limp_def)
+  Γ ⊢ ∀^p_A nu : (A → Ω) → Ω     ------------------------------- (Lam)
+                                 Γ ⊢ λx : A. psi ⊸ phi : A → Ω
+  -------------------------------------------------------------- (App)
+             Γ ⊢ ∀^p_A nu (λx : A. psi ⊸ phi) : Ω
+>> *)
 Example forall_limp Γ A (p : \bar R) (nu : tm Σ Γ (TMeas A))
     (psi phi : tm Σ (A :: Γ) TOmega) : tm Σ Γ TOmega :=
-  Forall_x p nu (psi -o phi).
+  ∀^p nu, psi -o phi.
 
-(** β-reduction on the syntax: (λx. x) N  and  N  are related by [subst1]. *)
-Example beta_id Γ A (N : tm Σ Γ A) : (Var vz : tm Σ (A :: Γ) A).[N] = N.
+(** A program,  let x <- sample_mu in (factor (phi x) ; ret x),  which is
+    bind sample_mu (λx : A. P) with P := factor (phi x) ; ret x:
+<<
+  Γ ⊢ bind : 𝒯A → (A → 𝒯A) → 𝒯A (Con)   Γ ⊢ sample_mu : 𝒯A (Con)
+  ------------------------------------------------------------ (App)
+  Γ ⊢ bind sample_mu : (A → 𝒯A) → 𝒯A
+
+                                           Γ, x : A ⊢ P : 𝒯A
+                                           ------------------------ (Lam)
+  Γ ⊢ bind sample_mu : (A → 𝒯A) → 𝒯A       Γ ⊢ λx : A. P : A → 𝒯A
+  ----------------------------------------------------------------- (App)
+                 Γ ⊢ bind sample_mu (λx : A. P) : 𝒯A
+>>
+    and, writing Δ for Γ, x : A and unfolding  M ; N := bind M (λy : 1. N)
+    with y fresh, the body P is typed by
+<<
+                        Δ ⊢ phi : A → Ω   Δ ⊢ x : A (Var)
+                        --------------------------------- (App)
+  Δ ⊢ factor : Ω → 𝒯1 (Con)       Δ ⊢ phi x : Ω
+  ----------------------------------------------- (App)
+  Δ ⊢ factor (phi x) : 𝒯1
+
+  Δ, y : 1 ⊢ ret : A → 𝒯A (Con)   Δ, y : 1 ⊢ x : A (Var)
+  ----------------------------------------------------- (App)
+  Δ, y : 1 ⊢ ret x : 𝒯A
+  --------------------------- (Lam)
+  Δ ⊢ λy : 1. ret x : 1 → 𝒯A
+
+  Δ ⊢ bind : 𝒯1 → (1 → 𝒯A) → 𝒯A (Con)   Δ ⊢ factor (phi x) : 𝒯1
+  ------------------------------------------------------------- (App)
+  Δ ⊢ bind (factor (phi x)) : (1 → 𝒯A) → 𝒯A       Δ ⊢ λy : 1. ret x : 1 → 𝒯A
+  ------------------------------------------------------------------------ (App)
+            Δ ⊢ bind (factor (phi x)) (λy : 1. ret x) : 𝒯A
+>>
+    In the paper phi : A → Ω, typed in Γ, is used in Δ by the (Var) rule
+    with a non-empty Γ'; here that weakening is the explicit [weaken phi].
+    Likewise [;;] weakens its second argument under the fresh y, which is
+    why [Ret #0] refers to x and not to y. *)
+Example program Γ A (mu : meas Σ A) (phi : tm Σ Γ (A → TOmega)) :
+  tm Σ Γ (TMeas A) :=
+  Sample mu >>= λ (Factor (weaken phi · #0) ;; Ret #0).
+
+(** β-reduction on the syntax: (λx : A. x) N and N are related by [subst1].
+    The redex is typed by
+<<
+  Γ, x : A ⊢ x : A (Var)
+  ----------------------- (Lam)
+  Γ ⊢ λx : A. x : A → A     Γ ⊢ N : A
+  ----------------------------------- (App)
+       Γ ⊢ (λx : A. x) N : A
+>>
+    and x[N/x] = N holds by computation. *)
+Example beta_id Γ A (N : tm Σ Γ A) : (#0 : tm Σ (A :: Γ) A).[N] = N.
 Proof. by []. Qed.
 
 End Examples.

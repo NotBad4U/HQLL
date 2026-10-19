@@ -66,7 +66,7 @@ From HQLL Require Import interval_einference algebra_order_utils nonneg_ereal
 (*                        Section "Interpretation of the logical constants")  *)
 (*              sem_tm == [[Γ ⊢ M : A]] : [[Γ]] -> [[A]], by recursion:     *)
 (*                        variables are projections, constants constant      *)
-(*                        morphisms, Abs is qbs_lam, App is eval ∘ pairing    *)
+(*                        morphisms, Lam is qbs_lam, App is eval ∘ pairing    *)
 (* ```                                                                        *)
 (******************************************************************************)
 
@@ -310,7 +310,7 @@ End omega_morphisms.
     quasi_borel.v provides evaluation [qbs_eval] and the partial
     application [qbs_curry f x]; here we show that the transpose
     x |-> f(x, -) is itself a QBS morphism X -> Z^Y, which is what the
-    interpretation of Abs requires. *)
+    interpretation of Lam requires. *)
 
 Section qbs_lam_instance.
 Variables (R : realType) (X Y Z : qbsType R).
@@ -435,7 +435,7 @@ Fixpoint sem_tm G A (t : tm sem_sig G A) :
   match t in tm _ _ A return qbsHomType (sem_ctx G) (sem_ty A) with
   | Var _ x => sem_var x
   | Con _ c => qbs_const _ (sem_const c)
-  | Abs _ _ M => qbs_lam (sem_tm M)
+  | Lam _ _ M => qbs_lam (sem_tm M)
   | App _ _ M N => qbs_comp (qbs_pair (sem_tm M) (sem_tm N)) (qbs_eval _ _)
   end.
 
@@ -456,7 +456,7 @@ Local Notation tmM := (tm (sem_sig M)).
 
 (** β at the level of points: [[(λx. M) N]](g) = [[M]](g, [[N]](g)). *)
 Example sem_beta G A B (N : tmM G A) (P : tmM (A :: G) B) g :
-  (sem_tm (App (Abs P) N) : _ -> _) g
+  (sem_tm (App (Lam P) N) : _ -> _) g
   = (sem_tm P : _ -> _) (g, (sem_tm N : _ -> _) g).
 Proof. by []. Qed.
 
@@ -486,7 +486,7 @@ Proof. by []. Qed.
     nonneg_ereal.v: [[φ ∨^p ψ]](g) = p_sum p ([[φ]]g) ([[ψ]]g) for
     finite p > 0. *)
 Example sem_por_fin G (p : R) (hp : (0 < p)%R) (phi psi : tmM G TOmega) g :
-  (sem_tm (phi ∨ [ p%:E ] psi) : _ -> _) g
+  (sem_tm (phi ∨^p%:E psi) : _ -> _) g
   = p_sum p%:E ((sem_tm phi : _ -> _) g) ((sem_tm psi : _ -> _) g).
 Proof. exact: pownnge_p_sum hp _ _. Qed.
 
