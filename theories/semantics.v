@@ -2,8 +2,10 @@ From HB Require Import structures.
 From mathcomp Require Import all_boot all_order all_algebra reals
   classical_sets boolp interval_inference constructive_ereal ereal
   measurable_structure measurable_function measurable_realfun
-  lebesgue_stieltjes_measure lebesgue_integral exp.
-From QBS Require Import quasi_borel measure_qbs_adjunction.
+  lebesgue_stieltjes_measure lebesgue_integral exp probability_measure
+  uniform_distribution normal_distribution.
+From QBS Require Import quasi_borel measure_qbs_adjunction probability_qbs
+  measure_as_qbs_measure.
 From HQLL Require Import interval_einference algebra_order_utils nonneg_ereal
   syntax.
 
@@ -52,7 +54,13 @@ From HQLL Require Import interval_einference algebra_order_utils nonneg_ereal
 (*                        (the half of cartesian closure missing from         *)
 (*                        quasi_borel.v)                                      *)
 (*          hqll_model R == the model structure: TQ with retQ, bindQ, intQ,   *)
-(*                        factorQ, massQ, normQ                               *)
+(*                        factorQ, massQ, normQ, and probQ, the inclusion of  *)
+(*                        the QBS probability triples (probability_qbs.v)    *)
+(*                        into TQ                                             *)
+(*      qbs_uniform_ab ab == Uniform[a, b] as a QBS probability on realQ,     *)
+(*                        from mathcomp's uniform_prob; [[uniform(a, b)]] and *)
+(*                        [[normal(m, s)]] are probQ of it and of             *)
+(*                        qbs_normal_distribution (mathcomp's normal_prob)    *)
 (*              sem_ty A == [[A]], by recursion on A (the paper's section    *)
 (*                        on types and contexts): [[1]] = unitQ, RR = realQ,  *)
 (*                        [[Omega]] = OmegaQ, products, exponentials, and     *)
@@ -335,6 +343,25 @@ Definition qbs_lam : qbsHomType X (expQ Y Z) := lam_fun.
 
 End qbs_lam_instance.
 
+(** * The uniform distribution on [a, b] as a QBS probability
+
+    measure_as_qbs_measure.v packages only Uniform[0, 1] ([qbs_uniform]);
+    the same construction with mathcomp's [uniform_prob a b ab] gives
+    Uniform[a, b], and [qbs_uniform_ab ltr01] is [qbs_uniform]. *)
+Section uniform_ab.
+Variable R : realType.
+Local Notation mR := (measurableTypeR R).
+
+Definition qbs_uniform_ab (a b : R) (ab : (a < b)%R) : qbs_prob (realQ R) :=
+  @mkQBSProb R (realQ R) idfun
+    (uniform_prob ab : probability mR R)
+    (@measurable_id _ mR setT).
+
+Lemma qbs_uniform_abE : qbs_uniform_ab ltr01 = qbs_uniform R.
+Proof. by []. Qed.
+End uniform_ab.
+Arguments qbs_uniform_ab {R a b} ab.
+
 (** * The model structure
 
     What the signature needs of the s-finite measure monad T on QBS
@@ -359,7 +386,11 @@ Record hqll_model (R : realType) := HQLLModel {
   (** mass : 𝒯 1 -> Omega,  m |-> m({*}) *)
   massQ : qbsHomType (TQ (unitQ R)) (OmegaQ R) ;
   (** norm : 𝒯 A -> 𝒯 A, normalisation *)
-  normQ : forall X : qbsType R, qbsHomType (TQ X) (TQ X) }.
+  normQ : forall X : qbsType R, qbsHomType (TQ X) (TQ X) ;
+  (** the inclusion of the probability measures (the triples of
+      probability_qbs.v) into the s-finite measures: a probability on X is
+      in particular an s-finite measure on X *)
+  probQ : forall X : qbsType R, qbs_prob X -> TQ X }.
 
 (** * Interpretation *)
 
@@ -421,6 +452,8 @@ Definition sem_const A (c : const sem_sig A) : sem_ty A :=
   | CRet A => retQ M (sem_ty A)
   | CBind A B => qbs_lam (bindQ M (sem_ty A) (sem_ty B))
   | CSample A mu => mu
+  | CUniform a b ab => probQ M (qbs_uniform_ab ab)
+  | CNormal m s hs => probQ M (qbs_normal_distribution m hs)
   | CFactor => factorQ M
   | CMass => massQ M
   | CNorm A => normQ M (sem_ty A)
@@ -504,3 +537,45 @@ Example sem_exists_oo_collapses G A (nu : tmM G (TMeas A))
 Proof. by apply/val_inj; rewrite /= eqxx. Qed.
 
 End examples.
+
+(** * The primitive distributions
+
+    [[uniform(a, b)]] and [[normal(m, s)]] are mathcomp's [uniform_prob] and
+    [normal_prob], packaged as QBS probability triples on [[RR]] = realQ and
+    included into T [[RR]] by [probQ]. *)
+
+Section distributions.
+Context {R : realType} (M : hqll_model R).
+Local Open Scope hqll_scope.
+Local Notation tmM := (tm (sem_sig M)).
+
+Example sem_normal01 G g :
+  (sem_tm (normal01 : tmM G _) : _ -> _) g
+  = probQ M (qbs_normal_distribution 0 ltr01).
+Proof. by []. Qed.
+
+Example sem_uniform01 G g :
+  (sem_tm (uniform01 : tmM G _) : _ -> _) g = probQ M (qbs_uniform R).
+Proof. by []. Qed.
+
+(** The posterior program unwinds to the model's bind at the normal
+    measure: [[let x <- normal(0, 1) in P]](g) = bind([[normal(0, 1)]],
+    [[λx. P]](g)). *)
+Example sem_posterior G (phi : tmM G (TReal → TOmega)) g :
+  (sem_tm (posterior phi) : _ -> _) g
+  = (bindQ M (sem_ty M TReal) (sem_ty M TReal) : _ -> _)
+      (probQ M (qbs_normal_distribution 0 ltr01),
+       qbs_curry (sem_tm (Factor (weaken phi · #0) ;; Ret #0)) g).
+Proof. by []. Qed.
+
+(** The expectation of psi under uniform(0, 1) is the mass of the prior
+    rescored by psi. *)
+Example sem_uniform_mass G (psi : tmM G (TReal → TOmega)) g :
+  (sem_tm (uniform_mass psi) : _ -> _) g
+  = (massQ M : _ -> _)
+      ((bindQ M (sem_ty M TReal) (sem_ty M TUnit) : _ -> _)
+         (probQ M (qbs_uniform R),
+          qbs_curry (sem_tm (Factor (weaken psi · #0))) g)).
+Proof. by []. Qed.
+
+End distributions.

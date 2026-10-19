@@ -16,8 +16,10 @@ From mathcomp Require Import all_boot ssralg ssrnum reals constructive_ereal.
 (* a context is a list of types, and the side condition that the variables    *)
 (* of a context be distinct disappears.                                       *)
 (*                                                                            *)
-(* The signature Σ of the paper is the fixed table of constants plus one      *)
-(* family [sample_mu : TMeas A] indexed by the s-finite measures mu on [[A]]. *)
+(* The signature Σ of the paper is the fixed table of constants, the two      *)
+(* primitive distributions uniform(a, b) and normal(m, s) on RR (with their    *)
+(* side conditions a < b and 0 < s as proof arguments, as in mathcomp), plus   *)
+(* one family [sample_mu : TMeas A] indexed by the s-finite measures mu on [[A]].*)
 (* The syntax does not know the semantics, so these indices are abstracted    *)
 (* into a family of symbols [meas Σ A]; the model instantiates [meas Σ A]     *)
 (* with the s-finite measures on [[A]].                                       *)
@@ -39,13 +41,15 @@ From mathcomp Require Import all_boot ssralg ssrnum reals constructive_ereal.
 (*             weaken M == M in a context extended by one variable            *)
 (*               M.[N] == M[N/x], substitution for the last variable          *)
 (*   Star, Pair, Fst, Snd, Zero, One, Tens, Plus, Inv, Pow p, Int, Ret, Bind, *)
-(*   Sample mu, Factor, Mass, Norm                                            *)
+(*   Sample mu, Uniform a b ab, Normal m s hs, Factor, Mass, Norm             *)
 (*                      == the constants of Σ applied to their arguments       *)
 (*   Infty, Bot, Top, CoTens, Limp, Por p, Pand p, Exists p, Forall p         *)
 (*                      == the derived constants (D1)--(D9)                    *)
 (*   qbind Q nu phi, Int_x nu phi, Exists_x p nu phi, Forall_x p nu phi       *)
 (*                      == binder sugar  Q (x ~ nu). phi  :=  Q nu (λx. phi)   *)
 (*     Letin M N, M ;; N == let x <- M in N  and  M ; N                        *)
+(*   const_map ι c, tm_map ι M == renaming of the measure symbols along     *)
+(*                         ι : meas Σ A -> meas Σ' A (a map of signatures)   *)
 (* ```                                                                        *)
 (*                                                                            *)
 (* Notations (scope [hqll_scope], key [hqll]; see the section Notations):      *)
@@ -184,6 +188,8 @@ Inductive const : ty -> Type :=
 | CRet A : const (A → TMeas A)                          (** return *)
 | CBind A B : const (TMeas A → (A → TMeas B) → TMeas B) (** bind *)
 | CSample A (mu : meas Σ A) : const (TMeas A)           (** sample_mu *)
+| CUniform (a b : R) (ab : (a < b)%R) : const (TMeas TReal)  (** uniform(a, b) *)
+| CNormal (m s : R) (hs : (0 < s)%R) : const (TMeas TReal)   (** normal(m, s) *)
 | CFactor : const (TOmega → TMeas TUnit)                (** factor *)
 | CMass : const (TMeas TUnit → TOmega)                  (** mass *)
 | CNorm A : const (TMeas A → TMeas A).                  (** norm *)
@@ -317,6 +323,15 @@ Definition Bind Γ A B (M : tm Γ (TMeas A)) (f : tm Γ (A → TMeas B)) :
 Definition Sample Γ A (mu : meas Σ A) : tm Γ (TMeas A) := Con (CSample mu).
 #[global] Arguments Sample {Γ A} mu.
 
+(** The primitive distributions on RR, with their side conditions carried as
+    proof arguments exactly as [uniform_prob a b ab] and
+    [qbs_normal_distribution m s hs] do in mathcomp. *)
+Definition Uniform Γ (a b : R) (ab : (a < b)%R) : tm Γ (TMeas TReal) :=
+  Con (@CUniform a b ab).
+
+Definition Normal Γ (m s : R) (hs : (0 < s)%R) : tm Γ (TMeas TReal) :=
+  Con (@CNormal m s hs).
+
 Definition Factor Γ (M : tm Γ TOmega) : tm Γ (TMeas TUnit) :=
   App (Con CFactor) M.
 
@@ -329,6 +344,12 @@ End Terms.
 
 Arguments const {R} Σ A%_ty.
 Arguments tm {R} Σ Γ A%_ty.
+(* The side conditions determine a, b and s, so Rocq would make them implicit;
+   they are kept explicit to read as uniform(a, b) and normal(m, s). *)
+Arguments CUniform {R Σ} a%_R b%_R ab.
+Arguments CNormal {R Σ} m%_R s%_R hs.
+Arguments Uniform {R Σ Γ} a%_R b%_R ab.
+Arguments Normal {R Σ Γ} m%_R s%_R hs.
 
 (** * Notations
 
@@ -498,6 +519,52 @@ Notation "∀^ p nu , phi" := (Forall_x p nu phi)
 Notation "M ;; N" := (Seq M N)
   (at level 100, right associativity, format "M  ;;  N") : hqll_scope.
 
+(** * Maps of signatures
+
+    The fixed constants are the same in every signature; two signatures
+    differ only by their measure symbols.  A map of symbols
+    ι : meas Σ A → meas Σ' A therefore acts on constants and on terms by
+    renaming the [sample_mu].  This is how a model interprets the terms
+    over a signature of named measures: it maps each symbol to a measure
+    of [meas sem_sig A] and interprets the image. *)
+
+Section SigMap.
+Context {R : realType} {Σ Σ' : signature R}.
+Variable ι : forall A, meas Σ A -> meas Σ' A.
+
+Definition const_map A (c : const Σ A) : const Σ' A :=
+  match c in const _ A return const Σ' A with
+  | CStar => CStar
+  | CPair _ _ => CPair
+  | CFst _ _ => CFst
+  | CSnd _ _ => CSnd
+  | CZero => CZero
+  | COne => COne
+  | CTens => CTens
+  | CPlus => CPlus
+  | CInv => CInv
+  | CPow p => CPow p
+  | CInt _ => CInt
+  | CRet _ => CRet
+  | CBind _ _ => CBind
+  | CSample _ mu => CSample (ι mu)
+  | CUniform a b ab => CUniform a b ab
+  | CNormal m s hs => CNormal m s hs
+  | CFactor => CFactor
+  | CMass => CMass
+  | CNorm _ => CNorm
+  end.
+
+Fixpoint tm_map Γ A (M : tm Σ Γ A) : tm Σ' Γ A :=
+  match M with
+  | Var _ x => Var x
+  | Con _ c => Con (const_map c)
+  | Lam _ _ M => Lam (tm_map M)
+  | App _ _ M N => App (tm_map M) (tm_map N)
+  end.
+
+End SigMap.
+
 (** * Examples *)
 
 Section Examples.
@@ -507,12 +574,12 @@ Local Open Scope hqll_scope.
 (** The derivation of Section "Typing", Γ ⊢ ∫_A nu (λx : A. phi) : Ω:
 <<
   (∫_A : 𝒯A → (A → Ω) → Ω) ∈ Σ
-  ----------------------------- (Con)
+  ————————————————————————————— (Con)
   Γ ⊢ ∫_A : 𝒯A → (A → Ω) → Ω     Γ ⊢ nu : 𝒯A
-  ------------------------------------------- (App)   Γ, x : A ⊢ phi : Ω
-  Γ ⊢ ∫_A nu : (A → Ω) → Ω                            ------------------------ (Lam)
+  ——————————————————————————————————————————— (App)   Γ, x : A ⊢ phi : Ω
+  Γ ⊢ ∫_A nu : (A → Ω) → Ω                            ———————————————————————— (Lam)
                                                       Γ ⊢ λx : A. phi : A → Ω
-  ------------------------------------------------------------------------ (App)
+  ———————————————————————————————————————————————————————————————————————— (App)
                       Γ ⊢ ∫_A nu (λx : A. phi) : Ω
 >>
     Read bottom-up, the derivation is the term: [Con CInt] is the (Con) leaf,
@@ -529,9 +596,9 @@ Proof. by []. Qed.
     ⊤ := ∞ := 0^* by (D3), (D1), and Γ ⊢ 0^* : Ω is
 <<
   ((-)^* : Ω → Ω) ∈ Σ        (0 : Ω) ∈ Σ
-  -------------------- (Con) ----------- (Con)
+  ———————————————————— (Con) ——————————— (Con)
   Γ ⊢ (-)^* : Ω → Ω          Γ ⊢ 0 : Ω
-  ------------------------------------- (App)
+  ————————————————————————————————————— (App)
               Γ ⊢ 0^* : Ω
 >> *)
 Example top_def Γ : (⊤ : tm Σ Γ TOmega) = 0 `*.
@@ -540,9 +607,9 @@ Proof. by []. Qed.
 (** phi ⊸ psi is the derived constant (D5) applied to phi and psi:
 <<
   Γ ⊢ ⊸ : Ω → Ω → Ω (D5)   Γ ⊢ phi : Ω
-  ------------------------------------ (App)
+  ———————————————————————————————————— (App)
   Γ ⊢ ⊸ phi : Ω → Ω                      Γ ⊢ psi : Ω
-  --------------------------------------------------- (App)
+  ——————————————————————————————————————————————————— (App)
                  Γ ⊢ phi ⊸ psi : Ω
 >>
     where the leaf (D5) is the derivation of the closed term
@@ -555,13 +622,13 @@ Proof. by []. Qed.
     (D9) applied to nu and to the abstraction of the body:
 <<
   Γ ⊢ ∀^p_A : 𝒯A → (A → Ω) → Ω (D9)   Γ ⊢ nu : 𝒯A
-  ------------------------------------------------ (App)
+  ———————————————————————————————————————————————— (App)
   Γ ⊢ ∀^p_A nu : (A → Ω) → Ω
 
                                  Γ, x : A ⊢ psi ⊸ phi : Ω   (as in limp_def)
-  Γ ⊢ ∀^p_A nu : (A → Ω) → Ω     ------------------------------- (Lam)
+  Γ ⊢ ∀^p_A nu : (A → Ω) → Ω     ——————————————————————————————— (Lam)
                                  Γ ⊢ λx : A. psi ⊸ phi : A → Ω
-  -------------------------------------------------------------- (App)
+  —————————————————————————————————————————————————————————————— (App)
              Γ ⊢ ∀^p_A nu (λx : A. psi ⊸ phi) : Ω
 >> *)
 Example forall_limp Γ A (p : \bar R) (nu : tm Σ Γ (TMeas A))
@@ -572,34 +639,34 @@ Example forall_limp Γ A (p : \bar R) (nu : tm Σ Γ (TMeas A))
     bind sample_mu (λx : A. P) with P := factor (phi x) ; ret x:
 <<
   Γ ⊢ bind : 𝒯A → (A → 𝒯A) → 𝒯A (Con)   Γ ⊢ sample_mu : 𝒯A (Con)
-  ------------------------------------------------------------ (App)
+  ———————————————————————————————————————————————————————————— (App)
   Γ ⊢ bind sample_mu : (A → 𝒯A) → 𝒯A
 
                                            Γ, x : A ⊢ P : 𝒯A
-                                           ------------------------ (Lam)
+                                           ———————————————————————— (Lam)
   Γ ⊢ bind sample_mu : (A → 𝒯A) → 𝒯A       Γ ⊢ λx : A. P : A → 𝒯A
-  ----------------------------------------------------------------- (App)
+  ————————————————————————————————————————————————————————————————— (App)
                  Γ ⊢ bind sample_mu (λx : A. P) : 𝒯A
 >>
     and, writing Δ for Γ, x : A and unfolding  M ; N := bind M (λy : 1. N)
     with y fresh, the body P is typed by
 <<
                         Δ ⊢ phi : A → Ω   Δ ⊢ x : A (Var)
-                        --------------------------------- (App)
+                        ————————————————————————————————— (App)
   Δ ⊢ factor : Ω → 𝒯1 (Con)       Δ ⊢ phi x : Ω
-  ----------------------------------------------- (App)
+  −−————————————————————————————————————————————————— (App)
   Δ ⊢ factor (phi x) : 𝒯1
 
   Δ, y : 1 ⊢ ret : A → 𝒯A (Con)   Δ, y : 1 ⊢ x : A (Var)
-  ----------------------------------------------------- (App)
+  ————————————————————————————————————————————————————— (App)
   Δ, y : 1 ⊢ ret x : 𝒯A
-  --------------------------- (Lam)
+  ——————————————————————————— (Lam)
   Δ ⊢ λy : 1. ret x : 1 → 𝒯A
 
   Δ ⊢ bind : 𝒯1 → (1 → 𝒯A) → 𝒯A (Con)   Δ ⊢ factor (phi x) : 𝒯1
-  ------------------------------------------------------------- (App)
+  ————————————————————————————————————————————————————————————— (App)
   Δ ⊢ bind (factor (phi x)) : (1 → 𝒯A) → 𝒯A       Δ ⊢ λy : 1. ret x : 1 → 𝒯A
-  ------------------------------------------------------------------------ (App)
+  ———————————————————————————————————————————————————————————————————————— (App)
             Δ ⊢ bind (factor (phi x)) (λy : 1. ret x) : 𝒯A
 >>
     In the paper phi : A → Ω, typed in Γ, is used in Δ by the (Var) rule
@@ -614,9 +681,9 @@ Example program Γ A (mu : meas Σ A) (phi : tm Σ Γ (A → TOmega)) :
     The redex is typed by
 <<
   Γ, x : A ⊢ x : A (Var)
-  ----------------------- (Lam)
+  ——————————————————————— (Lam)
   Γ ⊢ λx : A. x : A → A     Γ ⊢ N : A
-  ----------------------------------- (App)
+  ——————————————————————————————————— (App)
        Γ ⊢ (λx : A. x) N : A
 >>
     and x[N/x] = N holds by computation. *)
@@ -624,3 +691,43 @@ Example beta_id Γ A (N : tm Σ Γ A) : (#0 : tm Σ (A :: Γ) A).[N] = N.
 Proof. by []. Qed.
 
 End Examples.
+
+(** * Examples with the primitive distributions *)
+
+Section Distributions.
+Context {R : realType} {Σ : signature R}.
+Import Num.Theory.
+Local Open Scope hqll_scope.
+
+(** The standard normal and the uniform distribution on [0, 1], as terms
+    of type 𝒯 RR; [ltr01 : 0 < 1] discharges the side conditions, as in
+    mathcomp's [uniform_prob ltr01]. *)
+Example normal01 Γ : tm Σ Γ (TMeas TReal) := Normal 0 1 ltr01.
+#[global] Arguments normal01 {Γ}.
+Example uniform01 Γ : tm Σ Γ (TMeas TReal) := Uniform 0 1 ltr01.
+#[global] Arguments uniform01 {Γ}.
+
+(** A Bayesian program: condition a standard normal prior on an
+    observation model phi : RR → Ω and return the unnormalised posterior,
+      let x <- normal(0, 1) in (factor (phi x) ; ret x). *)
+Example posterior Γ (phi : tm Σ Γ (TReal → TOmega)) : tm Σ Γ (TMeas TReal) :=
+  normal01 >>= λ (Factor (weaken phi · #0) ;; Ret #0).
+
+(** A formula about it: psi holds (with softness p) of the normalised
+    posterior,
+      ∀^p (x ~ norm (let x <- normal(0, 1) in ...)). psi x *)
+Example posterior_forall Γ (p : \bar R) (phi psi : tm Σ Γ (TReal → TOmega)) :
+  tm Σ Γ TOmega :=
+  ∀^p Norm (posterior phi), weaken psi · #0.
+
+(** The L^p-mean of psi under uniform(0, 1),
+      ∃^p (x ~ uniform(0, 1)). psi x,
+    and the mass of the prior rescored by psi, which is its expectation. *)
+Example uniform_exists Γ (p : \bar R) (psi : tm Σ Γ (TReal → TOmega)) :
+  tm Σ Γ TOmega :=
+  ∃^p uniform01, weaken psi · #0.
+
+Example uniform_mass Γ (psi : tm Σ Γ (TReal → TOmega)) : tm Σ Γ TOmega :=
+  Mass (uniform01 >>= λ Factor (weaken psi · #0)).
+
+End Distributions.
