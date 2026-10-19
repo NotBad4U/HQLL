@@ -7,7 +7,7 @@ From mathcomp Require Import all_boot all_order all_algebra reals
 From QBS Require Import quasi_borel measure_qbs_adjunction probability_qbs
   measure_as_qbs_measure.
 From HQLL Require Import interval_einference algebra_order_utils nonneg_ereal
-  syntax.
+  omega syntax.
 
 (**md**************************************************************************)
 (* # Denotational semantics of HQLL in quasi-Borel spaces                     *)
@@ -35,7 +35,8 @@ From HQLL Require Import interval_einference algebra_order_utils nonneg_ereal
 (* theorem, not to the interpretation).                                       *)
 (*                                                                            *)
 (* ```                                                                        *)
-(*            OmegaQ R == the QBS of truth values: carrier {nonneg \bar R},   *)
+(*            OmegaQ R == the QBS of truth values Ω: carrier {nonneg \bar R}, *)
+(*                        (abbreviated Ω inside the sections)                *)
 (*                        random elements the alpha with measurable           *)
 (*                        (fun r => (alpha r)%:num)                           *)
 (*             mk_nng x0 == the element of {nonneg \bar R} packaging x with   *)
@@ -48,8 +49,8 @@ From HQLL Require Import interval_einference algebra_order_utils nonneg_ereal
 (*                        x^p = (x^-1) `^ (-p) (-oo < p < 0),                 *)
 (*                        x^+oo = pow_infe x, x^-oo = pow_infe (x^-1)         *)
 (*          pownnge p a == the same, packaged on {nonneg \bar R}              *)
-(*   qbs_tens, qbs_plus == ⊗ and ⊕ as morphisms Omega × Omega -> Omega        *)
-(*     qbs_inv, qbs_pow p == (-)^* and (-)^p as morphisms Omega -> Omega      *)
+(*   qbs_tens, qbs_plus == ⊗ and ⊕ as morphisms Omega × Ω -> Ω        *)
+(*     qbs_inv, qbs_pow p == (-)^* and (-)^p as morphisms Ω -> Ω      *)
 (*             qbs_lam f == the transpose X -> Z^Y of f : X × Y -> Z          *)
 (*                        (the half of cartesian closure missing from         *)
 (*                        quasi_borel.v)                                      *)
@@ -99,19 +100,6 @@ Variable R : realType.
 
 Local Notation mR := (measurableTypeR R).
 
-(** Packaging an extended real known to be non-negative. *)
-Lemma nng_spec (x : \bar R) : 0 <= x ->
-  Itv.spec (@ext_num_sem R) (Itv.Real `[Posz 0, +oo[) x.
-Proof.
-by move=> x0; apply/and3P; split; rewrite ?bnd_simp//=.
-Qed.
-
-Definition mk_nng (x : \bar R) (x0 : 0 <= x) : {nonneg \bar R} :=
-  Itv.mk (nng_spec x0).
-
-Lemma mk_nng_num (x : \bar R) (x0 : 0 <= x) : (mk_nng x0)%:num = x.
-Proof. by []. Qed.
-
 (** The QBS structure on {nonneg \bar R}. *)
 Let OMx : set (mR -> {nonneg \bar R}) :=
   [set alpha | measurable_fun setT (fun r => (alpha r)%:num)].
@@ -142,70 +130,16 @@ Proof. by []. Qed.
 
 End omega_qbs.
 
-(** * The connectives on Omega and their measurability
+(** * Measurability of the connectives on Omega
 
-    The operations of Section "Interpretation of the logical constants":
-    ⊗ and ⊕ are [mulnnge] (from nonneg_ereal.v) and [addnnge], the
-    involution (-)^* is [invnnge], and the powers (-)^p for p in [-oo, +oo]
-    are [pownnge].  [powO] is the same power function on the carrier
-    \bar R, where the measurability arguments take place. *)
+    The operations themselves ([mulnnge] from nonneg_ereal.v, [addnnge],
+    [invnnge], [pownnge] and the carrier-level [powO]) are in omega.v; here
+    they are shown Borel, as actions on random elements. *)
 
 Section omega_operations.
 Variable R : realType.
 
 Implicit Types (a b : {nonneg \bar R}) (x : \bar R).
-
-Lemma nngenum_ge0 a : 0 <= a%:num.
-Proof. by []. Qed.
-
-(** ⊕, the additive connective (the paper's a ⊕ b = a + b). *)
-Definition addnnge a b : {nonneg \bar R} :=
-  mk_nng (adde_ge0 (nngenum_ge0 a) (nngenum_ge0 b)).
-
-Lemma addnnge_num a b : (addnnge a b)%:num = a%:num + b%:num.
-Proof. by []. Qed.
-
-(** x^oo = lim_{p -> oo} x^p on [0, oo]: 0 below 1, 1 at 1, +oo above 1. *)
-Definition pow_infe x : \bar R :=
-  if x < 1 then 0 else if x == 1 then 1 else +oo.
-
-(** x^p on [0, oo] for a softness p in [-oo, +oo] (Section
-    "Interpretation of the logical constants"): x^0 = 1 for every x,
-    positive finite powers are poweR, negative ones go through the
-    involution, and the infinite ones are the limits [pow_infe]. *)
-Definition powO (p : \bar R) x : \bar R :=
-  match p with
-  | p'%:E => if p' == 0%R then 1
-             else if (0 < p')%R then x `^ p'
-             else x^-1 `^ (- p')
-  | +oo => pow_infe x
-  | -oo => pow_infe (x^-1)
-  end.
-
-Lemma powO_ge0 (p : \bar R) x : 0 <= x -> 0 <= powO p x.
-Proof.
-move=> x0; case: p => [p'| |] /=; rewrite ?/pow_infe.
-- by case: ifP => _ //; case: ifP => _; exact: poweR_ge0.
-- by case: ifP => _ //; case: ifP.
-- by case: ifP => _ //; case: ifP.
-Qed.
-
-Definition pownnge (p : \bar R) a : {nonneg \bar R} :=
-  mk_nng (powO_ge0 p (nngenum_ge0 a)).
-
-Lemma pownnge_num (p : \bar R) a : (pownnge p a)%:num = powO p a%:num.
-Proof. by []. Qed.
-
-(** The composite (a^p ⊕ b^p)^(1/p) of (D6) is the p-sum of
-    nonneg_ereal.v, for a finite softness 0 < p < oo. *)
-Lemma pownnge_p_sum (p : R) (hp : (0 < p)%R) a b :
-  pownnge ((p%:E)^-1) (addnnge (pownnge p%:E a) (pownnge p%:E b))
-  = p_sum p%:E a b.
-Proof.
-apply/val_inj; rewrite /= /p_sum ltry/=.
-rewrite /powO (gt_eqF hp) hp/= /inve/= (gt_eqF hp).
-by rewrite invr_eq0 (gt_eqF hp) invr_gt0 hp.
-Qed.
 
 (** ** Measurability of the connectives (as actions on random elements) *)
 
@@ -264,51 +198,51 @@ End omega_operations.
 Section omega_morphisms.
 Variable R : realType.
 
-Local Notation Omega := (OmegaQ R).
+Local Notation Ω := (OmegaQ R).
 
-(** ⊗ : Omega × Omega -> Omega. *)
+(** ⊗ : Ω × Ω -> Ω. *)
 Section qbs_tens_instance.
-Let f : prodQ Omega Omega -> Omega := fun p => mulnnge p.1 p.2.
+Let f : prodQ Ω Ω -> Ω := fun p => mulnnge p.1 p.2.
 Let hf : qbs_morphism f.
 Proof. by move=> alpha h; exact: emeasurable_funM h.1 h.2. Qed.
 HB.instance Definition _ :=
-  @isQBSMorphism.Build R (prodQ Omega Omega) Omega f hf.
-Definition qbs_tens : qbsHomType (prodQ Omega Omega) Omega := f.
+  @isQBSMorphism.Build R (prodQ Ω Ω) Ω f hf.
+Definition qbs_tens : qbsHomType (prodQ Ω Ω) Ω := f.
 End qbs_tens_instance.
 
-(** ⊕ : Omega × Omega -> Omega. *)
+(** ⊕ : Ω × Ω -> Ω. *)
 Section qbs_plus_instance.
-Let f : prodQ Omega Omega -> Omega := fun p => addnnge p.1 p.2.
+Let f : prodQ Ω Ω -> Ω := fun p => addnnge p.1 p.2.
 Let hf : qbs_morphism f.
 Proof. by move=> alpha h; exact: emeasurable_funD h.1 h.2. Qed.
 HB.instance Definition _ :=
-  @isQBSMorphism.Build R (prodQ Omega Omega) Omega f hf.
-Definition qbs_plus : qbsHomType (prodQ Omega Omega) Omega := f.
+  @isQBSMorphism.Build R (prodQ Ω Ω) Ω f hf.
+Definition qbs_plus : qbsHomType (prodQ Ω Ω) Ω := f.
 End qbs_plus_instance.
 
-(** (-)^* : Omega -> Omega. *)
+(** (-)^* : Ω -> Ω. *)
 Section qbs_inv_instance.
-Let f : Omega -> Omega := @invnnge R.
+Let f : Ω -> Ω := @invnnge R.
 Let hf : qbs_morphism f.
 Proof.
 move=> alpha h.
 exact: (measurable_funT_inve (fun r => nngenum_ge0 (alpha r)) h).
 Qed.
-HB.instance Definition _ := @isQBSMorphism.Build R Omega Omega f hf.
-Definition qbs_inv : qbsHomType Omega Omega := f.
+HB.instance Definition _ := @isQBSMorphism.Build R Ω Ω f hf.
+Definition qbs_inv : qbsHomType Ω Ω := f.
 End qbs_inv_instance.
 
-(** (-)^p : Omega -> Omega. *)
+(** (-)^p : Ω -> Ω. *)
 Section qbs_pow_instance.
 Variable p : \bar R.
-Let f : Omega -> Omega := @pownnge R p.
+Let f : Ω -> Ω := @pownnge R p.
 Let hf : qbs_morphism f.
 Proof.
 move=> alpha h.
 exact: (measurable_funT_powO p (fun r => nngenum_ge0 (alpha r)) h).
 Qed.
-HB.instance Definition _ := @isQBSMorphism.Build R Omega Omega f hf.
-Definition qbs_pow : qbsHomType Omega Omega := f.
+HB.instance Definition _ := @isQBSMorphism.Build R Ω Ω f hf.
+Definition qbs_pow : qbsHomType Ω Ω := f.
 End qbs_pow_instance.
 
 End omega_morphisms.
@@ -371,20 +305,24 @@ Arguments qbs_uniform_ab {R a b} ab.
     laws, ∫-prog/∫-lin/∫-zero, mass ∘ factor = id, ...) belong to the
     soundness theorem and are deferred to a separate interface. *)
 
-Record hqll_model (R : realType) := HQLLModel {
+Section model.
+Variable R : realType.
+Local Notation Ω := (OmegaQ R).
+
+Record hqll_model := HQLLModel {
   TQ : qbsType R -> qbsType R ;
   (** return : A -> 𝒯 A *)
   retQ : forall X : qbsType R, qbsHomType X (TQ X) ;
   (** bind : 𝒯 A × (A -> 𝒯 B) -> 𝒯 B, uncurried *)
   bindQ : forall X Y : qbsType R,
     qbsHomType (prodQ (TQ X) (expQ X (TQ Y))) (TQ Y) ;
-  (** ∫_A : 𝒯 A × (A -> Omega) -> Omega, uncurried *)
+  (** ∫_A : 𝒯 A × (A -> Ω) -> Ω, uncurried *)
   intQ : forall X : qbsType R,
-    qbsHomType (prodQ (TQ X) (expQ X (OmegaQ R))) (OmegaQ R) ;
-  (** factor : Omega -> 𝒯 1,  a |-> a · δ_* *)
-  factorQ : qbsHomType (OmegaQ R) (TQ (unitQ R)) ;
-  (** mass : 𝒯 1 -> Omega,  m |-> m({*}) *)
-  massQ : qbsHomType (TQ (unitQ R)) (OmegaQ R) ;
+    qbsHomType (prodQ (TQ X) (expQ X Ω)) Ω ;
+  (** factor : Ω -> 𝒯 1,  a |-> a · δ_* *)
+  factorQ : qbsHomType Ω (TQ (unitQ R)) ;
+  (** mass : 𝒯 1 -> Ω,  m |-> m({*}) *)
+  massQ : qbsHomType (TQ (unitQ R)) Ω ;
   (** norm : 𝒯 A -> 𝒯 A, normalisation *)
   normQ : forall X : qbsType R, qbsHomType (TQ X) (TQ X) ;
   (** the inclusion of the probability measures (the triples of
@@ -392,10 +330,13 @@ Record hqll_model (R : realType) := HQLLModel {
       in particular an s-finite measure on X *)
   probQ : forall X : qbsType R, qbs_prob X -> TQ X }.
 
+End model.
+
 (** * Interpretation *)
 
 Section semantics.
 Context {R : realType} (M : hqll_model R).
+Local Notation Ω := (OmegaQ R).
 
 Local Open Scope ty_scope.
 
@@ -407,7 +348,7 @@ Fixpoint sem_ty (A : ty) : qbsType R :=
   match A with
   | TUnit => unitQ R
   | TReal => realQ R
-  | TOmega => OmegaQ R
+  | TOmega => Ω
   | TProd A B => prodQ (sem_ty A) (sem_ty B)
   | TArr A B => expQ (sem_ty A) (sem_ty B)
   | TMeas A => TQ M (sem_ty A)

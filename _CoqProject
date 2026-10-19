@@ -3,5 +3,7 @@
 theories/interval_einference.v
 theories/algebra_order_utils.v
 theories/nonneg_ereal.v
+theories/omega.v
 theories/syntax.v
+theories/equational.v
 theories/semantics.v

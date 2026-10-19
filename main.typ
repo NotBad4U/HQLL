@@ -149,14 +149,14 @@ We present HQLL in the style of Church's simple theory of types as mechanised in
 constants, in which formulas are the terms of type $Omega$ and every logical operator,
 quantifiers included, is a constant applied to its arguments; binder notation is sugar.
 
-== Types
+== Types #rocqlink[ty][theories/syntax.v#73]
 
 $
   A, B ::= 1 mid(|) RR mid(|) Omega mid(|) A times B mid(|) A -> B mid(|) Dst A
 $
 
 The type constants are $1$, $RR$ and the type $Omega$ of truth values; the type operators
-are $times$, $->$ and the s-finite measure type $Dst$~#rocqlink[ty][theories/syntax.v#65]. The $Omega$ plays the role of $overline(RR)_+$ i.e. Prop,
+are $times$, $->$ and the s-finite measure type $Dst$. The $Omega$ plays the role of $overline(RR)_+$ i.e. Prop,
 and $RR$ that of individual: it is standard Borel.
 A term of type $Dst A$ denotes an s-finite measure on the space denoted by $A$. The measure
 is not required to be normalised: it may be a probability distribution, but also an
@@ -164,9 +164,9 @@ unnormalised or infinite measure such as Lebesgue measure on $RR$, or
 the unnormalised posterior computed by a program that uses $fct$. The
 measure enters the logic only as a term of type $Dst A$.
 
-#definition("Predicate")[The type of predicates on $A$ is defined by $Prd A ≔ A -> Omega$~#rocqlink[Pred][theories/syntax.v#84]]
+#definition("Predicate")[The type of predicates on $A$ is defined by $Prd A ≔ A -> Omega$~#rocqlink[Pred][theories/syntax.v#92]]
 
-== Terms and signature <sec:sig>
+== Terms and signature #rocqlink[tm][theories/syntax.v#215] <sec:sig>
 
 $
   M, N ::= x mid(|) c mid(|) M space N mid(|) lambda x : A. space M
@@ -176,7 +176,7 @@ $
 Terms are those of the simply typed $lambda$-calculus over the signature $Sig$ of
 @tab:sig, whose constants come in families indexed by types $A, B$, by a softness
 $p in (0, oo)$, by s-finite measures $mu$ and by Borel functions $f$. Formulas are the
-terms of type $Omega$ and predicates on $A$ the terms of type $Prd A$. We abbreviates $lambda a. space lambda b. space M$ as $lambda a space b. space M$.~#rocqlink[tm][theories/syntax.v#204]
+terms of type $Omega$ and predicates on $A$ the terms of type $Prd A$. We abbreviates $lambda a. space lambda b. space M$ as $lambda a space b. space M$.~#rocqlink[tm][theories/syntax.v#215]
 
 #figure(
   tb(
@@ -212,7 +212,7 @@ terms of type $Omega$ and predicates on $A$ the terms of type $Prd A$. We abbrev
     [$nrm$],
     [$Dst A -> Dst A$],
   ),
-  caption: [The signature $Sig$ of HQLL~#rocqlink[const][theories/syntax.v#168-185]],
+  caption: [The signature $Sig$ of HQLL~#rocqlink[const][theories/syntax.v#176-193]],
 ) <tab:sig>
 
 The computation $smp_mu$ draws from a constant s-finite measure $mu$ on $sem(A)$: a
@@ -226,7 +226,7 @@ its inverse $mss$ reads a measure on the one-point type back as a truth value.
 
 HOL builds $top, forall, exists, bot, not, and, or$ from the three primitives $=$,
 $arrow$ and $epsilon$ @gordonmelham1993. We do the same approach but without $epsilon$.
-We define the new constants in $Sig$ with the displayed type, together with the equation $c ≡ M$ (@sec:eqth)~#rocqlink[Infty … Forall][theories/syntax.v#321-355].
+We define the new constants in $Sig$ with the displayed type, together with the equation $c ≡ M$ (@sec:eqth)~#rocqlink[Infty … Forall][theories/syntax.v#413-454].
 Throughout, $p in [-oo, oo]$ unless stated otherwise.
 
 #[
@@ -261,15 +261,15 @@ Similarly approach done for the universal quantifier $forall^p_nu u$.
 
 #notations[
   We use the following abbreviations:
-  - $⟨M, N⟩ ≔ pr space M space N$, and, for $M : Dst A$, $"let" x <- M "in" N ≔ bnd space M space (lambda x : A. space N)$, with $M ; N ≔ "let" x <- M "in" N$ for $x$ fresh~#rocqlink[Letin, Seq][theories/syntax.v#379-386].
+  - $⟨M, N⟩ ≔ pr space M space N$, and, for $M : Dst A$, $"let" x <- M "in" N ≔ bnd space M space (lambda x : A. space N)$, with $M ; N ≔ "let" x <- M "in" N$ for $x$ fresh~#rocqlink[Letin, Seq][theories/syntax.v#481-488].
   - For any constant $Q : Dst A -> (A -> Omega) -> Omega$ (quantifiers) we write
-    $Q space (x tilde nu). space phi$ read $Q$ over $x$ drawn from $nu : Dst A$ where the type is omitted~#rocqlink[qbind][theories/syntax.v#361].
+    $Q space (x tilde nu). space phi$ read $Q$ over $x$ drawn from $nu : Dst A$ where the type is omitted~#rocqlink[qbind][theories/syntax.v#461].
 ]
 
 == Typing
 
 #definition("Context")[
-  Contexts $Gamma ::= diamond.small mid(|) Gamma, x : A$ are finite lists of distinct typed variables~#rocqlink[ctx][theories/syntax.v#118].
+  Contexts $Gamma ::= diamond.small mid(|) Gamma, x : A$ are finite lists of distinct typed variables~#rocqlink[ctx][theories/syntax.v#126].
 ]
 
 #definition("Judgement")[
@@ -281,7 +281,7 @@ Similarly approach done for the universal quantifier $forall^p_nu u$.
 ]
 
 No measure and no grade is attached to a context. Measures live in the terms of type $Dst A$, and
-grades in the entailment layer (@sec:quasitripos). As in HOL there are exactly four typing rules~#rocqlink[tm][theories/syntax.v#204-208]:
+grades in the entailment layer (@sec:quasitripos). As in HOL there are exactly four typing rules~#rocqlink[tm][theories/syntax.v#215-219]:
 
 #grid(
   columns: (1fr, 1fr),
@@ -293,6 +293,21 @@ grades in the entailment layer (@sec:quasitripos). As in HOL there are exactly f
   prooftree(rule(name: [Abs], $Gamma\, x : A tack M : B$, $Gamma tack lambda x : A. space M : A -> B$)),
   prooftree(rule(name: [App], $Gamma tack M : A -> B$, $Gamma tack N : A$, $Gamma tack M space N : B$)),
 )
+
+Weakening, exchange and substitution are admissible: a derivation in $Gamma$ is read in any
+context containing $Gamma$ by renaming its variables, and substitution acts on derivations.
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 9pt,
+  row-gutter: 14pt,
+  prooftree(rule(name: [Weak], $Gamma tack M : A$, $Gamma\, x : B tack M : A$)),
+  prooftree(rule(name: [Exch], $Gamma\, x : A\, y : B\, Gamma' tack M : C$, $Gamma\, y : B\, x : A\, Gamma' tack M : C$)),
+  grid.cell(colspan: 2, prooftree(rule(name: [Subst], $Gamma\, x : A tack M : B$, $Gamma tack N : A$, $Gamma tack M[N slash x] : B$))),
+)
+
+Weak is~#rocqlink[weaken][theories/syntax.v#235], Exch an instance of~#rocqlink[rename][theories/syntax.v#226] and
+Subst is~#rocqlink[subst1][theories/syntax.v#280].
 
 #example[
   #align(center, prooftree(rule(
@@ -319,9 +334,28 @@ grades in the entailment layer (@sec:quasitripos). As in HOL there are exactly f
   truth value of $phi$.
 ]
 
-== Equational theory <sec:eqth>
+== Conversion rules <sec:eqth>
 
-The judgement $Gamma tack M ≡ N : A$ is the least congruence i.e. reflexive, symmetric, transitive, closed under Abs and App --- containing the definitional equations of logical operators and the axioms below. It plays the role of HOL's axioms and conversion rules.
+The judgement $Gamma tack M ≡ N : A$~#rocqlink[conv][theories/equational.v#524-581] is the least
+congruence containing the definitional equations of the logical operators and the axioms
+below. The congruence is generated by the rules:
+
+#grid(
+  columns: (1fr, 1fr, 1fr),
+  gutter: 9pt,
+  row-gutter: 14pt,
+  prooftree(rule(name: [Refl], $Gamma tack M : A$, $Gamma tack M ≡ M : A$)),
+  prooftree(rule(name: [Sym], $Gamma tack M ≡ N : A$, $Gamma tack N ≡ M : A$)),
+  prooftree(rule(name: [Trans], $Gamma tack M ≡ N : A$, $Gamma tack N ≡ P : A$, $Gamma tack M ≡ P : A$)),
+)
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 9pt,
+  prooftree(rule(name: [Abs], $Gamma\, x : A tack M ≡ M' : B$, $Gamma tack lambda x : A. space M ≡ lambda x : A. space M' : A -> B$)),
+  prooftree(rule(name: [App], $Gamma tack M ≡ M' : A -> B$, $Gamma tack N ≡ N' : A$, $Gamma tack M space N ≡ M' space N' : B$)),
+)
+
+It plays the role of HOL's axioms and conversion rules.
 
 #block(above: 1.5em, below: 1.5em, grid(
   columns: (1fr, 1fr),
@@ -337,9 +371,28 @@ The judgement $Gamma tack M ≡ N : A$ is the least congruence i.e. reflexive, s
   $fct(mss(m)) ≡ m$,
 
   $"let" x <- ret M "in" N ≡ N[M slash x]$, $"let" x <- M "in" ret x ≡ M$,
-  grid.cell(colspan: 2, $"let" y <- ("let" x <- M "in" N) "in" P ≡ "let" x <- M "in" "let" y <- N "in" P$),
-  grid.cell(colspan: 2, $"let" x <- M "in" "let" y <- N "in" P ≡ "let" y <- N "in" "let" x <- M "in" P$),
+  grid.cell(colspan: 2, $"let" y <- ("let" x <- M "in" N) "in" P ≡ "let" x <- M "in" "let" y <- N "in" P quad (x in.not "FV"(P))$),
+  grid.cell(colspan: 2, $"let" x <- M "in" "let" y <- N "in" P ≡ "let" y <- N "in" "let" x <- M "in" P quad (x in.not "FV"(N), space y in.not "FV"(M))$),
 ))
+
+In the arithmetic schema, $s$ and $t$ are _$Omega$-expressions_. The formula $s[arrow(phi)]$
+instantiates the variables by formulas~#rocqlink[oexp, conv_omega][theories/equational.v#335-363].
+
+#lemma([Admissible rules])[
+  Weakening, exchange and substitution are not rules of the judgement but are derivable: every
+  rule is closed under renaming of the context and under substitution, by induction on the
+  derivation~#rocqlink[conv_rename, conv_subst][theories/equational.v#685-787].
+  #grid(
+    columns: (1fr, 1fr),
+    gutter: 9pt,
+    row-gutter: 14pt,
+    prooftree(rule(name: [Weak], $Gamma tack M ≡ N : A$, $Gamma\, x : B tack M ≡ N : A$)),
+    prooftree(rule(name: [Exch], $Gamma\, x : A\, y : B\, Gamma' tack M ≡ N : C$, $Gamma\, y : B\, x : A\, Gamma' tack M ≡ N : C$)),
+    grid.cell(colspan: 2, prooftree(rule(name: [Subst], $Gamma\, x : A tack M ≡ M' : B$, $Gamma tack N ≡ N' : A$, $Gamma tack M[N slash x] ≡ M'[N' slash x] : B$))),
+  )
+  Weak and Exch are the instances of renaming~#rocqlink[conv_weaken][theories/equational.v#723] and Subst
+  is~#rocqlink[conv_subst_cong][theories/equational.v#787].
+]
 
 Where HOL has the axiom of choice for $epsilon$, we have three axioms for $integral$:
 #[
@@ -356,8 +409,9 @@ The @eq:int-prog says that quantifying is running a program, integrating $phi$ a
 The @eq:int-lin and @eq:int-zero are additivity of the integral, which no monad law provides. Everything else follows.
 
 #lemma([Derived integration laws])[
-  The following equations are derivable, with $x in.not "FV"(phi)$ in @eq:int-bind and
-  $x in.not "FV"(psi)$ in @eq:int-hom:
+  The following equations are derivable, with $x in.not "FV"(phi)$ in @eq:int-bind,
+  $x in.not "FV"(psi)$ in @eq:int-hom and $x in.not "FV"(rho)$, $y in.not "FV"(nu)$ in
+  @eq:fubini~#rocqlink[conv_int_ret … conv_fubini][theories/equational.v#811-882]:
   #[
     #let names = ("∫-ret", "∫-bind", "∫-factor", "∫-hom", "Fubini")
     #set math.equation(numbering: n => names.at(n - 1, default: str(n)), supplement: none)
@@ -494,6 +548,7 @@ $sem(A_1) times dots.c times sem(A_n) -> sem(B)$.
   $sem(pi_1)(a, b) = a$, $sem(pi_2)(a, b) = b$,
   $sem(ret)(a) = ⟨1, delta_ast, ast |-> a⟩$, $sem(bnd)(nu, f) = nu kbind f$,
   $sem(smp_mu) = mu$, $sem(fct)(a) = a dot delta_ast$,
+  $sem("uniform"_(a, b)) = cal(U)[a, b]$, $sem("normal"_(m, s)) = cal(N)(m, s^2)$,
   $sem(mss)(m) = m({ast})$,
   $sem(nrm)(nu) = display(cases(nu slash nu(sem(A)) & "if" 0 < nu(sem(A)) < oo, 0 & "otherwise"))$,
 ))

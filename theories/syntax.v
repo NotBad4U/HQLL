@@ -353,8 +353,8 @@ Arguments Normal {R Σ Γ} m%_R s%_R hs.
 
 (** * Notations
 
-    Scope [hqll_scope] (key [hqll]).  Application binds tightest (level 10,
-    as Rocq's own), then [^] (30), [⊗] and [⊗*] (46), [⊕], [∨[p]], [∧[p]]
+    Scope [hqll_scope] (key [hqll]).  Application binds tightest (level 20,
+    just above Rocq's own so that f x · g y reads (f x) · (g y)), then [^] (30), [⊗] and [⊗*] (46), [⊕], [∨[p]], [∧[p]]
     (50), [>>=] (49), [-o] (51, right), binders ([λ], [∫], [∃], [∀]) extend as
     far to the right as possible (200), and [;;] is at 100.  The levels of
     the connectives are those of their semantic counterparts in
@@ -369,7 +369,7 @@ Notation "#3" := (Var (vs (vs (vs vz)))) : hqll_scope.
 
 (** λ-calculus: application [M · N] and abstraction [λ M], whose bound
     variable is [#0] in [M] (its type is determined by the context of [M]). *)
-Notation "M · N" := (App M N) (at level 10, left associativity) : hqll_scope.
+Notation "M · N" := (App M N) (at level 20, left associativity) : hqll_scope.
 Notation "'λ' M" := (Lam M) (at level 200, M at level 200,
   format "'λ'  M") : hqll_scope.
 
