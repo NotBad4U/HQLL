@@ -71,3 +71,27 @@ $
 The sequent reads: in the graded context $Theta$, which declares every variable free in
 $psi_1, dots, psi_k$ and $phi$, the formula $phi$ is true under the assumptions
 $psi_1, dots, psi_k$.
+
+#let hard-sequent-order = $
+  phi aele(Theta) phi' quad "iff" quad "for" nu_1"-a.e." x_1, dots, "for" nu_n (x_1, dots, x_(n-1))"-a.e." x_n : space
+  phi(x_1, dots, x_n) <= phi'(x_1, dots, x_n)
+$
+#let hard-sequent-valid = $
+  Theta thin | thin psi_1, dots, psi_k tack phi "is valid" quad <==> quad
+  sem(psi_1 ⊗ dots.c ⊗ psi_k) aele(Theta) sem(phi) quad quad (p_1 = dots.c = p_n = oo)
+$
+
+#corollary([Hard sequents])[
+  Let #gctx-explicit be well formed with every grade $p_i = oo$. Comparing formulas over
+  $Gamma_Theta$ almost everywhere along the chain,
+  #hard-sequent-order
+  validity is almost-everywhere entailment:
+  #hard-sequent-valid
+  #proof[
+    By @lem:esssup, the pointwise form of @thm:adjoint,
+    $1 <= sem(forall^oo (x tilde nu). chi)(g)$ iff $1 <= sem(chi)(g, x)$ for $nu_g$-almost
+    every $x$. Applied $n$ times from the outermost quantifier inwards, the sequent is valid iff
+    $1 <= sem((psi_1 ⊗ dots.c ⊗ psi_k) multimap phi)$ holds $Theta$-almost everywhere. Finally
+    $1 <= a multimap b$ iff $a <= b$ by @lem:residuation.
+  ]
+] <cor:hard-sequent>

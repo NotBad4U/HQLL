@@ -1,0 +1,7 @@
+{
+  // Tinymist: compile the whole paper from its entry point, whichever section file is focused,
+  // so that cross-file references (@thm:adjoint, @D8, ...) resolve in the editor.
+  // To work on the formula sheet instead, run "Typst Pin Main" (tinymist.pinMainToCurrent)
+  // with paper/spreadsheet.typ open; "Typst Unpin Main" returns to this entry.
+  "tinymist.typstExtraArgs": ["paper/main.typ"]
+}

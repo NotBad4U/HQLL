@@ -40,6 +40,8 @@
 #let ac = math.class("relation", sym.lt.double)
 #let acinf = math.class("relation", math.attach(sym.lt.double, t: sym.infinity))
 #let act = math.class("binary", sym.triangle.stroked.r)
+#let aele(m) = math.class("relation", math.attach(math.scripts(sym.lt.eq), br: m))
+#let aeeq(m) = math.class("relation", math.attach(math.scripts(sym.approx), br: m))
 // sequencing M ; N inside function calls (a bare ";" would split the arguments)
 #let seq = math.class("binary", ";")
 // Kleisli bind  ν >>= f, as the usual LaTeX \mathbin{>\!\!\!>\mkern-6.7mu=}

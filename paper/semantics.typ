@@ -250,6 +250,219 @@ $
 For the quantifier (@D8, @D9), for #sem-quant-measure and #sem-quant-fn:
 #sem-quant
 
+== Quantifiers as adjoints <sec:adjoint>
+
+Lawvere observed that quantifiers are adjoints to weakening @lawvere1969adjointness: for the
+projection $pi : X times Y -> X$, reading a predicate on $X$ as a predicate on $X times Y$ has a
+left adjoint $exists_Y$ and a right adjoint $forall_Y$ @jacobs1999cltt. In HQLL a quantifier is
+relative to a measure, and the adjunction holds for the hard quantifiers $exists^oo$ and
+$forall^oo$ once formulas on $X times Y$ are compared almost everywhere for that measure.
+Throughout this section $X := sem(Gamma)$, $Y := sem(A)$, and $nu in Qbs(X, T Y)$ is the kernel
+denoted by $Gamma tack nu : Dst A$, with $nu_g$ the s-finite measure it assigns to $g in X$.
+
+#let adj-mass = $
+  rho(B) := integral_Y bb(1)_B space dif rho = mu(alpha^(-1) B) quad quad (rho = ⟨W, mu, alpha⟩, space B in Sigma_(M_Y))
+$
+#let adj-esssup-def = $
+  limits(esssup)_rho u := inf { c in [0, oo] mid(|) rho({u > c}) = 0 }, quad quad
+  limits(essinf)_rho u := sup { c in [0, oo] mid(|) rho({u < c}) = 0 }.
+$
+#let adj-esssup-dual = $essinf_rho u = (esssup_rho u^*)^*$
+
+#definition([Essential supremum and infimum])[
+  Let $rho in |T Y|$ and $u in Qbs(Y, Omega)$. A morphism into $Omega$ is exactly a
+  $Sigma_(M_Y)$-measurable map, so ${u > c} in Sigma_(M_Y)$ for every $c$, and the mass of a
+  measurable set is the integral of its indicator (@def:sfinite):
+  #adj-mass
+  The essential supremum and infimum of $u$ are
+  #adj-esssup-def
+  Both sets are non-empty: $oo$ lies in the first and $0$ in the second. For the zero measure they
+  are $0$ and $oo$, so quantifying over nothing gives $bot$ and $top$. Since $c |-> c^*$ is an
+  order-reversing involution of $[0, oo]$ with ${u^* > c} = {u < c^*}$, the two are De Morgan
+  duals, #adj-esssup-dual, as in @D9.
+] <def:esssup>
+
+#let adj-esssup-char = $
+  limits(esssup)_rho u <= c <==> u <= c space rho"-a.e." quad quad quad quad
+  c <= limits(essinf)_rho u <==> c <= u space rho"-a.e."
+$
+
+#lemma([Essential bounds])[
+  For $rho in |T Y|$, $u in Qbs(Y, Omega)$ and $c in [0, oo]$:
+  #adj-esssup-char
+  #proof[#rocqlink[ess_sup_le_ae, ess_inf_ge_ae][theories/semantics.v]]
+] <lem:esssup>
+
+#let adj-pred = $(Qbs(X, Omega), <=)$
+#let adj-ae-order = $
+  phi aele(nu) phi' quad "iff" quad "for every" g in X, space phi(g, x) <= phi'(g, x) "for" nu_g"-almost every" x
+$
+#let adj-fibre = $(Qbs(X times Y, Omega), aele(nu))$
+
+#definition([Almost-everywhere order])[
+  Predicates on $X$ are ordered pointwise: #adj-pred is a poset. Predicates on $X times Y$ are
+  compared almost everywhere along $nu$,
+  #adj-ae-order
+  and #adj-fibre is a preorder. Its poset reflection identifies $phi aeeq(nu) phi'$ when both
+  inequalities hold, that is when $phi(g, -)$ and $phi'(g, -)$ agree $nu_g$-almost everywhere
+  for every $g$; this is all that $integral$, $exists^p$ and $forall^p$ ever see of a formula.
+  The preorder depends on $nu$: the quantifiers are indexed by kernels rather than by objects of
+  $Qbs$, which is why the contexts of @sec:quasitripos are ordered chains of kernels.
+] <def:ae-order>
+
+#let adj-weakening = $pi^* : Qbs(X, Omega) -> Qbs(X times Y, Omega), quad quad pi^* psi := psi compose pi_1$
+#let adj-quantifiers = $
+  exists^oo_nu, forall^oo_nu : Qbs(X times Y, Omega) -> Qbs(X, Omega), \
+  (exists^oo_nu phi)(g) := limits(esssup)_(nu_g) phi(g, -), quad quad
+  (forall^oo_nu phi)(g) := limits(essinf)_(nu_g) phi(g, -)
+$
+
+Weakening along the projection reads a predicate on $X$ as one on $X times Y$ that ignores $x$,
+#adj-weakening
+(the star is that of substitution functors @jacobs1999cltt, not the reciprocal of $Omega$), and
+the hard quantifiers of @sec:consts send a predicate on $X times Y$ back to $X$,
+#adj-quantifiers
+so that $exists^oo_nu phi = sem(exists^oo (x tilde nu). phi)$ and
+$forall^oo_nu phi = sem(forall^oo (x tilde nu). phi)$. All three maps are monotone, and
+$exists^oo_nu phi$, $forall^oo_nu phi$ depend on $phi$ only through its $aeeq(nu)$-class: both
+facts follow from the equivalences of @thm:adjoint.
+
+#let adj-statement = $exists^oo_nu tack.l pi^* tack.l forall^oo_nu$
+#let adj-hom = $
+  exists^oo_nu phi <= psi <==> phi aele(nu) pi^* psi, quad quad quad quad
+  pi^* psi aele(nu) phi <==> psi <= forall^oo_nu phi
+$
+
+#theorem([Quantifiers as adjoints])[
+  For every $nu in Qbs(X, T Y)$, #adj-statement: for all $psi in Qbs(X, Omega)$ and
+  $phi in Qbs(X times Y, Omega)$,
+  #adj-hom
+  #proof[#rocqlink[exists_oo_adj, forall_oo_adj][theories/semantics.v]]
+] <thm:adjoint>
+
+#let adj-laws = $
+  exists^oo_nu (phi or^oo phi') = exists^oo_nu phi or^oo exists^oo_nu phi', quad
+  exists^oo_nu bot = bot, \
+  forall^oo_nu (phi and^oo phi') = forall^oo_nu phi and^oo forall^oo_nu phi', quad
+  forall^oo_nu top = top
+$
+#let adj-unit = $
+  (exists^oo_nu pi^* psi)(g) = cases(psi(g) & "if" nu_g != 0, 0 & "if" nu_g = 0) quad quad quad
+  (forall^oo_nu pi^* psi)(g) = cases(psi(g) & "if" nu_g != 0, oo & "if" nu_g = 0)
+$
+
+#corollary[
+  For the almost-everywhere order, binary joins and meets are the pointwise $max = sem(or^oo)$
+  and $min = sem(and^oo)$, with bottom $0 = sem(bot)$ and top $oo = sem(top)$, and the hard
+  quantifiers preserve them, as equalities of predicates on $X$:
+  #adj-laws
+  The counit and unit of the two adjunctions,
+  $exists^oo_nu pi^* psi <= psi <= forall^oo_nu pi^* psi$, compute to
+  #adj-unit
+  so quantifying a formula that does not mention $x$ over a measure that is nowhere zero changes
+  nothing, whereas $integral_(x tilde nu) psi = psi ⊗ nu_g (Y)$ scales it by the mass of $nu_g$.
+  The join law is not what singles out $p = oo$: by linearity of the integral
+  $exists^p_nu (phi or^p phi') = exists^p_nu phi or^p exists^p_nu phi'$ for every $p$. The
+  adjunction is.
+  #proof[#rocqlink[exists_oo_laws, forall_oo_laws][theories/semantics.v]]
+] <cor:adjoint-laws>
+
+#let adj-frobenius = $
+  exists^oo_nu (pi^* psi ⊗ phi) = psi ⊗ exists^oo_nu phi, quad quad quad
+  forall^oo_nu (pi^* psi multimap phi) = psi multimap forall^oo_nu phi
+$
+
+#corollary([Frobenius reciprocity])[
+  For $psi in Qbs(X, Omega)$ and $phi in Qbs(X times Y, Omega)$,
+  #adj-frobenius
+  #proof[#rocqlink[exists_oo_frobenius, forall_oo_frobenius][theories/semantics.v]]
+] <cor:frobenius>
+
+#let adj-bc-square = align(center, commutative-diagram(
+  node-padding: (70pt, 45pt),
+  node((0, 0), $X' times Y$),
+  node((0, 1), $X'$),
+  node((1, 0), $X times Y$),
+  node((1, 1), $X$),
+  arr((0, 0), (0, 1), $pi_1$),
+  arr((0, 0), (1, 0), $f times "id"_Y$, label-pos: right),
+  arr((1, 0), (1, 1), $pi_1$, label-pos: right),
+  arr((0, 1), (1, 1), $f$),
+))
+#let adj-bc = $
+  f^* (exists^oo_nu phi) = exists^oo_(nu compose f) ((f times "id"_Y)^* phi), quad quad quad
+  f^* (forall^oo_nu phi) = forall^oo_(nu compose f) ((f times "id"_Y)^* phi)
+$
+
+#proposition([Beck–Chevalley])[
+  Let $f in Qbs(X', X)$. Reindexing the kernel along $f$ gives $nu compose f in Qbs(X', T Y)$,
+  with $(nu compose f)_(g') = nu_(f(g'))$, and the pullback of the projection along $f$ is the
+  square
+  #adj-bc-square
+  Substitution commutes with quantification: for every $phi in Qbs(X times Y, Omega)$,
+  #adj-bc
+  where $f^* psi := psi compose f$ and $(f times "id"_Y)^* phi := phi compose (f times "id"_Y)$.
+  #proof[#rocqlink[exists_oo_bc, forall_oo_bc][theories/semantics.v]]
+  The same computation applies to $integral$, $exists^p$ and $forall^p$ for every $p$, which are
+  likewise pointwise in the environment: Beck–Chevalley, unlike the adjunction, does not single
+  out $p = oo$. Syntactically $f$ is the denotation of a substitution for the variables of
+  $Gamma$, and the equation says that substitution commutes with quantification,
+  $(Q space (x tilde nu). space phi)[N slash y] = Q space (x tilde nu[N slash y]). space phi[N slash y]$
+  for $y != x$.
+] <prop:beck-chevalley>
+
+#let adj-ex-measure = $mu := ⟨RR, cal(N)(0, 1), s |-> P_s⟩ in |T(Omega^RR)|, quad quad P_s (x) := e^(-(x - s)^2)$
+#let adj-ex-formula = $P : Prd RR tack phi : Omega, quad phi := integral_(x tilde "uniform"_(0, 1)) P space x$
+#let adj-ex-I = $I(s) := integral_0^1 e^(-(x - s)^2) dif x = (sqrt(pi) slash 2) (op("erf")(1 - s) + op("erf")(s))$
+#let adj-ex-values = $
+  sem(forall^oo (P tilde smp_mu). space phi) & = limits(essinf)_(s tilde cal(N)(0, 1)) I(s) = 0, \
+  sem(integral_(P tilde smp_mu) phi) & = integral_RR I(s) space cal(N)(0, 1)(dif s) = (sqrt(pi) slash 2) op("erf")(1 slash sqrt(3)) approx 0.52, \
+  sem(exists^oo (P tilde smp_mu). space phi) & = limits(esssup)_(s tilde cal(N)(0, 1)) I(s) = sqrt(pi) op("erf")(1 slash 2) approx 0.92.
+$
+
+#example([Quantifying over predicates])[
+  The type $A$ in @thm:adjoint is arbitrary, so the quantifiers also bind predicate variables,
+  with $Y = sem(Prd B) = Omega^(sem(B))$. This is the higher-order case that quasi-Borel spaces
+  are made for @qbs: $T(Omega^RR)$ contains the laws of random functions. Let $mu$ be the law
+  of a random Gaussian bump,
+  #adj-ex-measure
+  the normal distribution pushed forward along $s |-> P_s$, a morphism $RR -> Omega^RR$ because
+  $(s, x) |-> e^(-(x - s)^2)$ is Borel. The formula
+  #adj-ex-formula
+  averages the predicate $P$ over the unit interval, and $smp_mu : Dst (Prd RR)$ lets the
+  quantifiers bind $P$. With
+  #adj-ex-I
+  continuous, positive, maximal at $s = 1 slash 2$ and tending to $0$ as $|s| -> oo$, and since
+  $cal(N)(0, 1)$ has full support,
+  #adj-ex-values
+  Every single predicate $P_s$ has a positive average, yet $forall^oo$ returns $0$: the hard
+  quantifiers bound $I$ almost surely, not at a particular $P$. By @thm:adjoint a closed $psi$
+  satisfies $psi <= sem(forall^oo (P tilde smp_mu). space phi)$ iff $psi <= I(s)$ for
+  $cal(N)(0, 1)$-almost every $s$, and $sem(exists^oo (P tilde smp_mu). space phi) <= psi$ iff
+  $I(s) <= psi$ almost surely.
+] <ex:predicate-quantifier>
+
+#let adj-finite-p-setup = $nu := cal(U)[0, 1], quad phi := 1 ⊕ bb(1)_([0, 1 slash 2])$
+#let adj-finite-p = $
+  exists^oo_nu phi = 2 > ((2^p + 1) slash 2)^(1 slash p) = exists^p_nu phi, quad quad
+  forall^oo_nu phi = 1 < ((1 + 2^(-p)) slash 2)^(-1 slash p) = forall^p_nu phi
+$
+
+#proposition([Soft quantifiers are not adjoints])[
+  For $0 < p < oo$ neither $exists^p_nu tack.l pi^*$ nor $pi^* tack.l forall^p_nu$ holds.
+  Adjoints into the poset #adj-pred are unique, so by @thm:adjoint it is enough that
+  $exists^p_nu$ and $forall^p_nu$ differ from the hard quantifiers: take $X = 1$, $Y = RR$, #adj-finite-p-setup; then
+  #adj-finite-p
+  as $(2^p + 1) slash 2 < 2^p$ and $(1 + 2^(-p)) slash 2 < 1$. The direction
+  $phi aele(nu) pi^* psi ==> exists^p_nu phi <= psi$ survives when every $nu_g$ is a
+  sub-probability measure, since $exists^p_nu$ is monotone and
+  $exists^p_nu (pi^* psi) = psi ⊗ nu_g (Y)^(1 slash p) <= psi$, but fails for general s-finite
+  $nu$: the soft quantifiers are means, not bounds. The adjunction characterises $exists^oo$ and
+  $forall^oo$ uniquely, which is why @sec:consts interprets them directly rather than as the
+  instances $p = oo$ of @D8 and @D9, whose outer power $(-)^(1 slash oo) = (-)^0$ collapses to
+  the constant $1$.
+] <rem:finite-p>
+
 == Soundness
 
 #let soundness-stmt = $

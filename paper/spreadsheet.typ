@@ -6,7 +6,7 @@
 // math macro in the whole section), then import it and give it an `entry` below.
 
 #import "common.typ": *
-#import "omega.typ": omega-ops, reals-notation
+#import "omega.typ": omega-ops, omega-residuation, reals-notation
 #import "syntax.typ": (
   types-syntax, pred-def,
   terms-syntax, lam-abbrev, sig-table, grade-range, const-defs, hard-quantifiers,
@@ -24,12 +24,16 @@
   sem-const-point, sem-terms, sem-prims,
   sem-env, sem-env-measure, sem-unwind,
   sem-omega-args, sem-p-range, sem-arith, sem-logic, sem-quant-measure, sem-quant-fn, sem-quant,
+  adj-mass, adj-esssup-def, adj-esssup-dual, adj-esssup-char, adj-pred, adj-ae-order, adj-fibre,
+  adj-weakening, adj-quantifiers, adj-statement, adj-hom, adj-laws, adj-unit, adj-frobenius, adj-bc-square, adj-bc, adj-ex-measure, adj-ex-formula, adj-ex-I, adj-ex-values,
+  adj-finite-p-setup, adj-finite-p,
   soundness-stmt,
 )
 #import "entailment.typ": (
   gctx-syntax, gctx-erase-nil, gctx-erase-cons, gctx-wf-measure, gctx-wf-fresh,
   seq-erasure, seq-counit,
   gctx-explicit, sequent-typing, sequent-form, sequent-sem, sequent-valid,
+  hard-sequent-order, hard-sequent-valid,
 )
 
 #set document(title: [Higher order QLL with QBS: formula sheet])
@@ -67,6 +71,7 @@
 = Multiplicative Extended Reals $RR_times.o$
 
 #entry([Operations], omega-ops)
+#entry([Residuation], omega-residuation)
 #entry([Notation], reals-notation)
 
 = Syntax
@@ -148,6 +153,20 @@
 #entry([Logical operators], sem-logic)
 #entry([Quantifiers], where: (sem-quant-measure, sem-quant-fn), sem-quant)
 
+== Quantifiers as adjoints
+
+#entry([Mass of a measurable set], adj-mass)
+#entry([Essential supremum and infimum], adj-esssup-def, adj-esssup-dual)
+#entry([Essential bounds], adj-esssup-char)
+#entry([Orders on predicates], side(adj-pred, adj-fibre), adj-ae-order)
+#entry([Weakening and hard quantifiers], adj-weakening, adj-quantifiers)
+#entry([Quantifiers as adjoints], adj-statement, adj-hom)
+#entry([Laws], adj-laws, adj-unit)
+#entry([Frobenius reciprocity], adj-frobenius)
+#entry([Beck–Chevalley], adj-bc-square, adj-bc)
+#entry([Quantifying over predicates], where: (adj-ex-measure,), adj-ex-formula, adj-ex-I, adj-ex-values)
+#entry([Soft quantifiers are not adjoints], where: (adj-finite-p-setup,), adj-finite-p)
+
 == Soundness
 
 #entry([Soundness of the equational theory], soundness-stmt)
@@ -160,3 +179,4 @@
 #entry([Erasure functor], seq-erasure, seq-counit)
 #entry([Logical sequent], where: (gctx-explicit, sequent-typing), sequent-form, sequent-sem)
 #entry([Validity], sequent-valid)
+#entry([Hard sequents], hard-sequent-order, hard-sequent-valid)
